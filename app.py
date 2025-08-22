@@ -40,6 +40,25 @@ def iter_structure():
         series_list.append({"name": series.name, "volumes": vols})
     return series_list
 
+def get_chapter_neighbors(chapter_path: str):
+    ch_dir = safe_join(ROOT_DIR, chapter_path)
+    if not ch_dir.exists() or not ch_dir.is_dir():
+        abort(404, description="Chapter not found")
+    vol_dir = ch_dir.parent
+    # vol 内の CH* ディレクトリをソート
+    chapters = sorted([c for c in vol_dir.iterdir() if c.is_dir() and c.name.startswith("CH")])
+    if not chapters:
+        return chapter_path, chapter_path
+    try:
+        idx = [c.name for c in chapters].index(ch_dir.name)
+    except ValueError:
+        abort(404, description="Chapter not indexed")
+    prev_idx = (idx - 1) % len(chapters)
+    next_idx = (idx + 1) % len(chapters)
+    prev_rel = str(chapters[prev_idx].relative_to(ROOT_DIR)).replace("\\", "/")
+    next_rel = str(chapters[next_idx].relative_to(ROOT_DIR)).replace("\\", "/")
+    return prev_rel, next_rel
+
 @app.route("/")
 def index():
     data = iter_structure()
@@ -81,11 +100,10 @@ def chapter_single(chapter_path):
     stage_files = [f for f, _ in STAGES]
     stage = request.args.get("stage")
     if stage not in stage_files:
-        stage = stage_files[0]  # デフォルトは最初（10.plot.md）
+        stage = stage_files[0]
 
     idx = stage_files.index(stage)
     label = dict(STAGES)[stage]
-
     p = ch_dir / stage
     content = p.read_text(encoding="utf-8") if p.exists() else ""
 
@@ -93,6 +111,9 @@ def chapter_single(chapter_path):
     next_idx = (idx + 1) % len(stage_files)
     prev_stage = stage_files[prev_idx]
     next_stage = stage_files[next_idx]
+
+    # 章の上下ナビ
+    prev_ch, next_ch = get_chapter_neighbors(chapter_path)
 
     return render_template(
         "single.html",
@@ -102,7 +123,9 @@ def chapter_single(chapter_path):
         label=label,
         content=content,
         prev_stage=prev_stage,
-        next_stage=next_stage
+        next_stage=next_stage,
+        prev_chapter=prev_ch,
+        next_chapter=next_ch,
     )
 
 @app.post("/api/save")

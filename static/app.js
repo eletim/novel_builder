@@ -1,4 +1,4 @@
-// 追加：個別表示ページ（single.html）対応
+// static/app.js
 (function () {
   const $ = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
@@ -83,29 +83,22 @@
     }
   }
 
-  // 追加：個別（1カラム）ページ
-  const singlePane = $("#singlePane");
+  const singlePane = document.querySelector("#singlePane");
   if (singlePane) {
     const chapterPath = singlePane.dataset.chapter;
     const filename = singlePane.dataset.filename;
-    const editor = $("#singleEditor");
-    const dirty = $(".dirty", singlePane);
+    const editor = document.querySelector("#singleEditor");
+    const dirty = singlePane.querySelector(".dirty");
 
-    // 入力で未保存マーク
     editor.addEventListener("input", () => { dirty.hidden = false; });
 
-    // 保存ボタン
-    const saveBtn = $("#saveBtn");
-    const saveBtn2 = $("#saveBtn2");
+    const saveBtn = document.querySelector("#saveBtn");
+    const saveBtn2 = document.querySelector("#saveBtn2");
     async function saveSingle(quiet = false) {
       const res = await fetch("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chapter_path: chapterPath,
-          filename,
-          content: editor.value,
-        }),
+        body: JSON.stringify({ chapter_path: chapterPath, filename, content: editor.value }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -116,27 +109,19 @@
       if (!quiet) showToast(`${filename} を保存しました`);
       return true;
     }
-    saveBtn && saveBtn.addEventListener("click", () => saveSingle(false));
+    saveBtn  && saveBtn.addEventListener("click", () => saveSingle(false));
     saveBtn2 && saveBtn2.addEventListener("click", () => saveSingle(false));
 
-    // Ctrl+S で保存
-    window.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        saveSingle(false);
-      }
-    });
-
-    // 矢印キーでステージ切替
+    // キーボード：左右=ステージ、上下=章
     const nav = window.__SINGLE__ || {};
     window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft" && nav.prevUrl) {
-        e.preventDefault();
-        location.href = nav.prevUrl;
-      } else if (e.key === "ArrowRight" && nav.nextUrl) {
-        e.preventDefault();
-        location.href = nav.nextUrl;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault(); saveSingle(false); return;
       }
+      if (e.key === "ArrowLeft"  && nav.prevStageUrl)   { e.preventDefault(); location.href = nav.prevStageUrl; }
+      if (e.key === "ArrowRight" && nav.nextStageUrl)   { e.preventDefault(); location.href = nav.nextStageUrl; }
+      if (e.key === "ArrowUp"    && nav.prevChapterUrl) { e.preventDefault(); location.href = nav.prevChapterUrl; }
+      if (e.key === "ArrowDown"  && nav.nextChapterUrl) { e.preventDefault(); location.href = nav.nextChapterUrl; }
     });
   }
 })();

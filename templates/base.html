@@ -18,6 +18,28 @@
   <footer class="foot">
     <small>Root: {{ root if root else "" }}</small>
   </footer>
+  <!-- SVG icon symbols (inline, no external dependency) -->
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute; width:0; height:0; overflow:hidden;">
+    <defs>
+      <!-- Feather風のChevron（描画色はcurrentColorを継承） -->
+      <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M15 18l-6-6 6-6" />
+      </symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M9 18l6-6-6-6" />
+      </symbol>
+      <symbol id="i-chevron-up" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M18 15l-6-6-6 6" />
+      </symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+        <path d="M6 9l6 6 6-6" />
+      </symbol>
+    </defs>
+  </svg>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
   {% block scripts %}{% endblock %}
 </body>
