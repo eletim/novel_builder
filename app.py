@@ -72,6 +72,39 @@ def chapter(chapter_path):
         notes=notes
     )
 
+@app.route("/chapter/<path:chapter_path>/single")
+def chapter_single(chapter_path):
+    ch_dir = safe_join(ROOT_DIR, chapter_path)
+    if not ch_dir.exists() or not ch_dir.is_dir():
+        abort(404, description="Chapter not found")
+
+    stage_files = [f for f, _ in STAGES]
+    stage = request.args.get("stage")
+    if stage not in stage_files:
+        stage = stage_files[0]  # デフォルトは最初（10.plot.md）
+
+    idx = stage_files.index(stage)
+    label = dict(STAGES)[stage]
+
+    p = ch_dir / stage
+    content = p.read_text(encoding="utf-8") if p.exists() else ""
+
+    prev_idx = (idx - 1) % len(stage_files)
+    next_idx = (idx + 1) % len(stage_files)
+    prev_stage = stage_files[prev_idx]
+    next_stage = stage_files[next_idx]
+
+    return render_template(
+        "single.html",
+        chapter_name=ch_dir.name,
+        chapter_path=chapter_path,
+        filename=stage,
+        label=label,
+        content=content,
+        prev_stage=prev_stage,
+        next_stage=next_stage
+    )
+
 @app.post("/api/save")
 def api_save():
     data = request.get_json(force=True, silent=False)

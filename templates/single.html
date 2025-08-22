@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% set title = chapter_name ~ " / " ~ label %}
+
+{% block header_right %}
+<div class="actions">
+  <a class="btn" href="{{ url_for('chapter', chapter_path=chapter_path) }}">一覧表示</a>
+  <a class="btn" id="prevBtn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}">＜</a>
+  <a class="btn" id="nextBtn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}">＞</a>
+  <button id="saveBtn" class="btn">💾 保存（Ctrl+S）</button>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ chapter_name }}</h1>
+<p class="muted">{{ chapter_path }} / <strong>{{ label }}</strong> <span class="file">{{ filename }}</span></p>
+
+<section class="pane" id="singlePane" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
+  <header class="pane-head">
+    <div class="pane-title">
+      <strong>{{ label }}</strong>
+      <span class="file">{{ filename }}</span>
+      <span class="dirty" hidden>●未保存</span>
+    </div>
+    <div class="pane-tools">
+      <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}">＜</a>
+      <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}">＞</a>
+      <button class="btn" id="saveBtn2">保存</button>
+    </div>
+  </header>
+  <textarea class="editor" id="singleEditor" spellcheck="false">{{ content }}</textarea>
+</section>
+
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ナビゲーションURL（矢印キーにも対応）
+  window.__SINGLE__ = {
+    prevUrl: "{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}",
+    nextUrl: "{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}"
+  };
+</script>
+{% endblock %}

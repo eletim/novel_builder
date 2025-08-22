@@ -2,6 +2,7 @@
 {% set title = chapter_name %}
 {% block header_right %}
 <div class="actions">
+  <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}">個別表示</a>
   <button id="saveAllBtn" class="btn">💾 すべて保存（Ctrl+S）</button>
   <label class="notes-toggle"><input type="checkbox" id="toggleNotes"> notes を表示</label>
 </div>
