@@ -1,4 +1,4 @@
-characters/*
-!characters/.gitkeep
+data/*
+!data/.gitkeep
 prompts/*
 !prompts/.gitkeep

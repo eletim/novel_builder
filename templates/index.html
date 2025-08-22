@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set title = "一覧" %}
+{% block content %}
+<h1>シリーズ / 巻 / 章 一覧</h1>
+
+{% if not data %}
+<p>フォルダが見つかりませんでした。<br>
+<code>{{ root }}</code> に <code>series-*</code> / <code>vol-*</code> / <code>CH**-*</code> を作成してください。</p>
+{% endif %}
+
+<div class="tree">
+  {% for s in data %}
+  <details open>
+    <summary class="series">{{ s.name }}</summary>
+    {% for v in s.volumes %}
+    <details open>
+      <summary class="volume">{{ v.name }}</summary>
+      <ul>
+        {% for ch in v.chapters %}
+        <li>
+          <a class="chapter-link" href="{{ url_for('chapter', chapter_path=ch.relpath) }}">{{ ch.name }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endfor %}
+  </details>
+  {% endfor %}
+</div>
+{% endblock %}

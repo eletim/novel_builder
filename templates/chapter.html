@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set title = chapter_name %}
+{% block header_right %}
+<div class="actions">
+  <button id="saveAllBtn" class="btn">💾 すべて保存（Ctrl+S）</button>
+  <label class="notes-toggle"><input type="checkbox" id="toggleNotes"> notes を表示</label>
+</div>
+{% endblock %}
+
+{% block content %}
+<h1>{{ chapter_name }}</h1>
+<p class="muted">{{ chapter_path }}</p>
+
+<div class="grid4" id="editorGrid" data-chapter="{{ chapter_path }}">
+  {% for f in files %}
+  <section class="pane" data-filename="{{ f.filename }}">
+    <header class="pane-head">
+      <div class="pane-title">
+        <strong>{{ f.label }}</strong>
+        <span class="file">{{ f.filename }}</span>
+        <span class="dirty" hidden>●未保存</span>
+      </div>
+      <div class="pane-tools">
+        <button class="btn btn-save">保存</button>
+      </div>
+    </header>
+    <textarea class="editor" spellcheck="false">{{ f.content }}</textarea>
+  </section>
+  {% endfor %}
+</div>
+
+<details id="notesWrap" class="notes" open hidden>
+  <summary>notes.md</summary>
+  <section class="pane" data-filename="notes.md">
+    <header class="pane-head">
+      <div class="pane-title">
+        <strong>Notes</strong>
+        <span class="file">notes.md</span>
+        <span class="dirty" hidden>●未保存</span>
+      </div>
+      <div class="pane-tools">
+        <button class="btn btn-save">保存</button>
+      </div>
+    </header>
+    <textarea class="editor" spellcheck="false">{{ notes }}</textarea>
+  </section>
+</details>
+
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.__CHAPTER_PATH__ = "{{ chapter_path }}";
+</script>
+{% endblock %}
