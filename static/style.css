@@ -41,9 +41,15 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
 
 .grid4 {
   display: grid;
-  grid-template-columns: repeat(4, minmax(240px, 1fr));
   gap: 10px;
+  grid-template-columns: repeat(4, minmax(280px, 1fr));
 }
+
+/* 画面幅に応じて列数を減らして折り返す */
+@media (max-width: 1400px) { .grid4 { grid-template-columns: repeat(3, minmax(260px, 1fr)); } }
+@media (max-width: 1100px) { .grid4 { grid-template-columns: repeat(2, minmax(260px, 1fr)); } }
+@media (max-width: 700px)  { .grid4 { grid-template-columns: 1fr; } }
+
 
 .pane {
   background: var(--panel);
@@ -62,11 +68,23 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
 .pane-title .dirty { color: var(--warn); margin-left: 8px; font-size: 12px; }
 
 .editor {
-  width: 100%; height: 100%;
-  resize: none; outline: none; border: 0; background: transparent; color: var(--fg);
+  width: 100%;
+  height: 100%;
+  /* 横方向はスクロールさせず、縦だけ可変 */
+  resize: vertical;
+  outline: none;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
   padding: 12px;
-  font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Code", Consolas, "Noto Sans Mono", monospace;
-  tab-size: 2; white-space: pre;
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Monaco, "Cascadia Code", Consolas, "Noto Sans Mono", monospace;
+  tab-size: 2;
+
+  /* ← ここがポイント：固定幅内で折り返す */
+  white-space: pre-wrap;     /* 改行は維持＋必要に応じて折り返し */
+  word-break: break-word;    /* 長い英単語/URLも折り返す */
+  overflow-wrap: anywhere;   /* どこでも折り返し（モダンブラウザ） */
+  overflow-x: hidden;        /* 横スクロールは出さない */
 }
 
 .btn {
@@ -150,14 +168,6 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
 
 /* 狭い画面では少し小さく */
 @media (max-width: 900px) {
-  .grid4 {
-    display: block;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-  .pane {
-    display: inline-block; vertical-align: top; width: 85vw; min-width: 360px; margin-right: 10px;
-  }
   .nav-arrows .nav-arrow { width: 36px; height: 36px; }
   .nav-arrows .nav-arrow .icon { width: 20px; height: 20px; }
 }

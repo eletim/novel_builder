@@ -153,4 +153,4 @@ def api_save():
 if __name__ == "__main__":
     ROOT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"* NOVEL_ROOT: {ROOT_DIR}")
-    app.run(debug=True)
+    app.run(debug=False)
