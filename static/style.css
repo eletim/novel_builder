@@ -119,9 +119,57 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
 /* single の四辺ナビ配置 */
 #singlePane { position: relative; }
 
-/* 共通ボタン */
-.nav-arrows .nav-arrow {
-  position: absolute;
+/* 3カラム：15% / 70% / 15% */
+.single-layout {
+  display: grid;
+  grid-template-columns: 15% 70% 15%;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* サイドナビ（左右15%列） */
+.side-nav {
+  display: flex;
+  align-items: center;   /* 縦中央 */
+  justify-content: center; /* 横中央 */
+  padding: 8px 0;
+}
+
+/* 縦3段レイアウト：上矢印 / 中央( 左15% 本文70% 右15% ) / 下矢印 */
+.single-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* 上下の章ナビ（中央寄せ、テキストエリアの外側） */
+.vnav {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0;
+}
+.vnav-top    { border-bottom: 1px dashed var(--border); }
+.vnav-bottom { border-top:    1px dashed var(--border); }
+
+/* 中央段：15% / 70% / 15% */
+.single-middle {
+  display: grid;
+  grid-template-columns: 15% 70% 15%;
+  align-items: stretch;
+  gap: 0;
+}
+
+/* 左右サイド（矢印を中央に） */
+.side {
+  display: flex;
+  align-items: center;     /* 縦中央 */
+  justify-content: center; /* 横中央 */
+}
+
+/* 既存の .nav-arrow / .icon スタイルをそのまま使用 */
+
+/* 共通ボタンスタイル（左右・上下） */
+.nav-arrow {
   display: grid;
   place-items: center;
   width: 42px; height: 42px;
@@ -135,39 +183,57 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
   transition: transform .12s ease, box-shadow .12s ease, background .2s ease, opacity .15s ease;
   opacity: 0.92;
 }
-
-.nav-arrows .nav-arrow .icon {
-  width: 22px; height: 22px;
-  /* SVGはstrokeで色がつく（currentColor） */
-}
-
-.nav-arrows .nav-arrow:hover {
+.nav-arrow:hover {
   transform: translateY(-1px) scale(1.05);
   box-shadow: 0 12px 26px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.03);
   opacity: 1;
 }
-
-.nav-arrows .nav-arrow:active {
-  transform: translateY(0) scale(0.98);
-}
-
-/* キーボード操作時のフォーカスリング */
-.nav-arrows .nav-arrow:focus-visible {
+.nav-arrow:active { transform: translateY(0) scale(0.98); }
+.nav-arrow:focus-visible {
   outline: none;
   box-shadow:
     0 12px 26px rgba(0,0,0,0.45),
-    0 0 0 2px rgba(77,163,255,0.6),    /* 外側 */
+    0 0 0 2px rgba(77,163,255,0.6),
     inset 0 0 0 1px rgba(255,255,255,0.04);
 }
+.nav-arrow .icon { width: 22px; height: 22px; }
 
-/* 位置（中央寄せ） */
-.arrow-left  { top: 50%; left: 8px;  transform: translateY(-50%); }
-.arrow-right { top: 50%; right: 8px; transform: translateY(-50%); }
-.arrow-up    { left: 50%; top: 8px;   transform: translateX(-50%); }
-.arrow-down  { left: 50%; bottom: 8px;transform: translateX(-50%); }
+/* 上下ボタンはエディタ内で絶対配置（中央列の上下） */
+#singlePane { position: relative; }
+.nav-arrows .arrow-up,
+.nav-arrows .arrow-down {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nav-arrows .arrow-up   { top: 8px; }
+.nav-arrows .arrow-down { bottom: 8px; }
 
-/* 狭い画面では少し小さく */
+/* モバイル対策（任意）：狭い時は左右列を細めにし、中央を優先 */
 @media (max-width: 900px) {
-  .nav-arrows .nav-arrow { width: 36px; height: 36px; }
-  .nav-arrows .nav-arrow .icon { width: 20px; height: 20px; }
+  .single-layout {
+    grid-template-columns: 10% 80% 10%;
+  }
+  .nav-arrow { width: 36px; height: 36px; }
+  .nav-arrow .icon { width: 20px; height: 20px; }
+}
+
+/* さらに狭い場合は左右を隠す（任意） */
+/*
+@media (max-width: 600px) {
+  .single-layout { grid-template-columns: 0 1fr 0; }
+  .side-nav { display: none; }
+}
+*/
+
+/* アクセシビリティ：スクリーンリーダー用テキスト */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+@media (max-width: 900px) {
+  .single-middle { grid-template-columns: 10% 80% 10%; }
+  .nav-arrow { width: 36px; height: 36px; }
+  .nav-arrow .icon { width: 20px; height: 20px; }
 }

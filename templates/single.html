@@ -7,66 +7,72 @@
   <button id="saveBtn" class="btn">💾 保存（Ctrl+S）</button>
 </div>
 {% endblock %}
-
 {% block content %}
 <h1>{{ chapter_name }}</h1>
 <p class="muted">{{ chapter_path }} / <strong>{{ label }}</strong> <span class="file">{{ filename }}</span></p>
 
-<section class="pane" id="singlePane" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
-  <header class="pane-head">
-    <div class="pane-title">
-      <strong>{{ label }}</strong>
-      <span class="file">{{ filename }}</span>
-      <span class="dirty" hidden>●未保存</span>
-    </div>
-    <div class="pane-tools">
-      <!-- 右上にも保険として左右ボタン残す（任意） -->
-      <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}">＜</a>
-      <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}">＞</a>
-      <button class="btn" id="saveBtn2">保存</button>
-    </div>
-  </header>
-
-  <!-- 四辺ナビ -->
-  <nav class="nav-arrows" aria-label="Stage/Chapter navigation">
-    <!-- 左 = 前ステージ -->
-    <a class="nav-arrow arrow-left" aria-label="前ステージ (←)"
-       href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}">
-      <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
-      <span class="sr-only">前ステージ</span>
-    </a>
-
-    <!-- 右 = 次ステージ -->
-    <a class="nav-arrow arrow-right" aria-label="次ステージ (→)"
-       href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}">
-      <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
-      <span class="sr-only">次ステージ</span>
-    </a>
-
-    <!-- 上 = 前章 -->
-    <a class="nav-arrow arrow-up" aria-label="前の章へ (↑)"
+<div class="single-rows">
+  <!-- 上：前章 -->
+  <div class="vnav vnav-top">
+    <a class="nav-arrow" aria-label="前の章へ (↑)"
        href="{{ url_for('chapter_single', chapter_path=prev_chapter) }}?stage={{ filename }}">
       <svg class="icon" aria-hidden="true"><use href="#i-chevron-up"></use></svg>
       <span class="sr-only">前の章</span>
     </a>
+  </div>
 
-    <!-- 下 = 次章 -->
-    <a class="nav-arrow arrow-down" aria-label="次の章へ (↓)"
+  <!-- 中央：左(15%)＋本文(70%)＋右(15%) -->
+  <div class="single-middle">
+    <!-- 左：前ステージ -->
+    <div class="side side-left">
+      <a class="nav-arrow" aria-label="前ステージ (←)"
+         href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron-left"></use></svg>
+        <span class="sr-only">前ステージ</span>
+      </a>
+    </div>
+
+    <!-- 本文 70% -->
+    <section class="pane" id="singlePane" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
+      <header class="pane-head">
+        <div class="pane-title">
+          <strong>{{ label }}</strong>
+          <span class="file">{{ filename }}</span>
+          <span class="dirty" hidden>●未保存</span>
+        </div>
+        <div class="pane-tools">
+          <button class="btn" id="saveBtn2">保存</button>
+        </div>
+      </header>
+      <textarea class="editor" id="singleEditor" spellcheck="false" wrap="soft">{{ content }}</textarea>
+    </section>
+
+    <!-- 右：次ステージ -->
+    <div class="side side-right">
+      <a class="nav-arrow" aria-label="次ステージ (→)"
+         href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}">
+        <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+        <span class="sr-only">次ステージ</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 下：次章 -->
+  <div class="vnav vnav-bottom">
+    <a class="nav-arrow" aria-label="次の章へ (↓)"
        href="{{ url_for('chapter_single', chapter_path=next_chapter) }}?stage={{ filename }}">
       <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
       <span class="sr-only">次の章</span>
     </a>
-  </nav>
-
-  <textarea class="editor" id="singleEditor" spellcheck="false">{{ content }}</textarea>
-</section>
+  </div>
+</div>
 
 <div id="toast" class="toast" hidden></div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // キーボードナビ用のURL
+  // キーボードナビ（既存仕様：左右=ステージ、上下=章）
   window.__SINGLE__ = {
     prevStageUrl: "{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ prev_stage }}",
     nextStageUrl: "{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ next_stage }}",
