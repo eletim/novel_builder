@@ -153,9 +153,22 @@
     const filename    = singlePane.dataset.filename;
     const editor      = $("#singleEditor");
     const dirty       = $(".dirty", singlePane);
+    const charEl = document.querySelector("#charCount");
+    const lineEl = document.querySelector("#lineCount");
 
-    // 未保存マーク
-    editor && editor.addEventListener("input", () => { if (dirty) dirty.hidden = false; });
+    function updateCounters() {
+      if (!editor || !charEl || !lineEl) return;
+      const normalized = editor.value.replace(/\r/g, ""); // CR除去
+      const chars = Array.from(normalized.replace(/\n/g, "")).length; // 改行除く
+      const lines = normalized === "" ? 0 : normalized.split("\n").length; // 行数
+      charEl.textContent = String(chars);
+      lineEl.textContent = String(lines);
+    }
+
+    editor && editor.addEventListener("input", () => {
+      if (dirty) dirty.hidden = false;
+      updateCounters();
+    })
 
     async function saveSingle(quiet = false) {
       const res = await fetch("/api/save", {
@@ -180,6 +193,8 @@
     // ボタン保存
     $("#saveBtn")  && $("#saveBtn").addEventListener("click",  () => saveSingle(false));
     $("#saveBtn2") && $("#saveBtn2").addEventListener("click", () => saveSingle(false));
+
+    updateCounters();
 
     // Ctrl+S 保存
     window.addEventListener("keydown", (e) => {
