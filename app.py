@@ -1,7 +1,8 @@
 # app.py
 import os
+import re
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify, abort
+from flask import Flask, render_template, request, jsonify, abort, url_for
 
 app = Flask(__name__)
 
@@ -23,7 +24,6 @@ def safe_join(base: Path, relative: str) -> Path:
     return target
 
 def iter_structure():
-    """series → vol → chapter の3階層を探索して返す"""
     if not ROOT_DIR.exists():
         return []
     series_list = []
@@ -36,7 +36,13 @@ def iter_structure():
                     "name": ch.name,
                     "relpath": str(ch.relative_to(ROOT_DIR)).replace("\\", "/"),
                 })
-            vols.append({"name": vol.name, "chapters": chapters})
+            vols.append({
+                "name": vol.name,
+                "relpath": str(vol.relative_to(ROOT_DIR)).replace("\\", "/"),
+                "next_ch": compute_next_ch_name(vol)  # ★ 追加
+                ,
+                "chapters": chapters
+            })
         series_list.append({"name": series.name, "volumes": vols})
     return series_list
 
@@ -59,10 +65,66 @@ def get_chapter_neighbors(chapter_path: str):
     next_rel = str(chapters[next_idx].relative_to(ROOT_DIR)).replace("\\", "/")
     return prev_rel, next_rel
 
+CH_NUM_RE = re.compile(r"^CH(\d{2})")
+
+def compute_next_ch_name(vol_dir: Path) -> str | None:
+    """volディレクトリ内の既存CHを見て、未使用の最小番号(01..99)を返す。満杯ならNone。"""
+    taken = set()
+    if not vol_dir.exists():
+        return "CH01"
+    for c in vol_dir.iterdir():
+        if c.is_dir() and c.name.startswith("CH"):
+            m = CH_NUM_RE.match(c.name)
+            if m:
+                taken.add(int(m.group(1)))
+    for i in range(1, 100):  # 01..99
+        if i not in taken:
+            return f"CH{i:02d}"
+    return None
+
+def create_chapter_under_volume(volume_relpath: str) -> Path:
+    """指定volume配下に新規CHxxを作成し、4ステージ＋notes.mdを空で作る。"""
+    vol_dir = safe_join(ROOT_DIR, volume_relpath)
+    if not vol_dir.exists() or not vol_dir.is_dir():
+        abort(400, description="volume not found")
+
+    next_name = compute_next_ch_name(vol_dir)
+    if not next_name:
+        abort(400, description="この巻はCH99まで埋まっています")
+
+    ch_dir = vol_dir / next_name
+    if ch_dir.exists():
+        abort(409, description="chapter already exists")
+
+    ch_dir.mkdir(parents=True, exist_ok=False)
+    # 空のステージファイルを作成
+    for filename, _label in STAGES:
+        (ch_dir / filename).write_text("", encoding="utf-8")
+    (ch_dir / "notes.md").write_text("", encoding="utf-8")
+    return ch_dir
+
 @app.route("/")
 def index():
     data = iter_structure()
     return render_template("index.html", data=data, root=str(ROOT_DIR))
+
+@app.post("/api/create_chapter")
+def api_create_chapter():
+    data = request.get_json(force=True, silent=False)
+    volume_path = data.get("volume_path")
+    if not volume_path:
+        abort(400, description="volume_path is required")
+
+    ch_dir = create_chapter_under_volume(volume_path)
+    relpath = str(ch_dir.relative_to(ROOT_DIR)).replace("\\", "/")
+
+    return jsonify({
+        "ok": True,
+        "chapter_name": ch_dir.name,
+        "chapter_relpath": relpath,
+        "chapter_url": url_for("chapter", chapter_path=relpath),
+        "single_url": url_for("chapter_single", chapter_path=relpath)  # stageはデフォ(10.plot.md)
+    })
 
 @app.route("/chapter/<path:chapter_path>")
 def chapter(chapter_path):

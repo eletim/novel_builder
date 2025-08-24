@@ -1,127 +1,49 @@
 // static/app.js
 (function () {
   const $ = (sel, el = document) => el.querySelector(sel);
-  const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
 
-  const toast = $("#toast");
-  function showToast(msg, ok = true) {
-    if (!toast) return;
-    toast.textContent = msg;
-    toast.style.borderColor = ok ? "var(--ok)" : "var(--err)";
-    toast.hidden = false;
-    clearTimeout(showToast._t);
-    showToast._t = setTimeout(() => (toast.hidden = true), 1600);
+  // ── indexページ：新規チャプター作成
+  const volSelect = $("#volumeSelect");
+  const nextChLabel = $("#nextChLabel");
+  const createBtn = $("#createChBtn");
+
+  function updateNextLabel() {
+    if (!volSelect || !nextChLabel) return;
+    const opt = volSelect.selectedOptions[0];
+    const next = opt?.dataset?.next || "";
+    nextChLabel.textContent = next || "—";
+    createBtn.disabled = !next; // 満杯(None)なら作成不可
+    createBtn.title = next ? "" : "この巻はCH99まで埋まっています";
   }
 
-  // 既存：一覧（4カラム）
-  const grid = $("#editorGrid");
-  if (grid) {
-    const chapterPath = grid.dataset.chapter;
-
-    $$(".pane").forEach(pane => {
-      const ta = $(".editor", pane);
-      const dirty = $(".dirty", pane);
-      if (!ta || !dirty) return;
-      ta.addEventListener("input", () => { dirty.hidden = false; });
-    });
-
-    $$(".btn-save", grid).forEach(btn => {
-      btn.addEventListener("click", async (e) => {
-        const pane = e.target.closest(".pane");
-        await savePane(pane);
-      });
-    });
-
-    const saveAllBtn = $("#saveAllBtn");
-    saveAllBtn && saveAllBtn.addEventListener("click", async () => {
-      for (const pane of $$(".pane", grid)) {
-        await savePane(pane, true);
-      }
-      const notesPane = document.querySelector(`#notesWrap .pane`);
-      if (notesPane && !notesPane.closest("#notesWrap").hidden) {
-        await savePane(notesPane, true);
-      }
-      showToast("すべて保存しました");
-    });
-
-    window.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault();
-        saveAllBtn?.click();
-      }
-    });
-
-    async function savePane(pane, quiet = false) {
-      const filename = pane.dataset.filename;
-      const ta = $(".editor", pane);
-      const dirty = $(".dirty", pane);
-      const res = await fetch("/api/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chapter_path: chapterPath,
-          filename,
-          content: ta.value,
-        }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (!quiet) showToast("保存に失敗: " + text, false);
-        return false;
-      }
-      dirty.hidden = true;
-      if (!quiet) showToast(`${filename} を保存しました`);
-      return true;
-    }
-
-    const toggleNotes = $("#toggleNotes");
-    const notesWrap = $("#notesWrap");
-    if (toggleNotes && notesWrap) {
-      toggleNotes.addEventListener("change", () => {
-        notesWrap.hidden = !toggleNotes.checked;
-      });
-    }
+  if (volSelect) {
+    updateNextLabel();
+    volSelect.addEventListener("change", updateNextLabel);
   }
 
-  const singlePane = document.querySelector("#singlePane");
-  if (singlePane) {
-    const chapterPath = singlePane.dataset.chapter;
-    const filename = singlePane.dataset.filename;
-    const editor = document.querySelector("#singleEditor");
-    const dirty = singlePane.querySelector(".dirty");
-
-    editor.addEventListener("input", () => { dirty.hidden = false; });
-
-    const saveBtn = document.querySelector("#saveBtn");
-    const saveBtn2 = document.querySelector("#saveBtn2");
-    async function saveSingle(quiet = false) {
-      const res = await fetch("/api/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chapter_path: chapterPath, filename, content: editor.value }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        if (!quiet) showToast("保存に失敗: " + text, false);
-        return false;
+  if (createBtn) {
+    createBtn.addEventListener("click", async () => {
+      const volume_path = volSelect.value;
+      createBtn.disabled = true;
+      try {
+        const res = await fetch("/api/create_chapter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ volume_path })
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          alert("作成に失敗しました: " + text);
+          createBtn.disabled = false;
+          return;
+        }
+        const data = await res.json();
+        // すぐ編集に入れるよう、個別表示へ遷移
+        location.href = data.single_url;
+      } catch (e) {
+        alert("作成に失敗しました: " + (e?.message || e));
+        createBtn.disabled = false;
       }
-      dirty.hidden = true;
-      if (!quiet) showToast(`${filename} を保存しました`);
-      return true;
-    }
-    saveBtn  && saveBtn.addEventListener("click", () => saveSingle(false));
-    saveBtn2 && saveBtn2.addEventListener("click", () => saveSingle(false));
-
-    // キーボード：左右=ステージ、上下=章
-    const nav = window.__SINGLE__ || {};
-    window.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault(); saveSingle(false); return;
-      }
-      if (e.key === "ArrowLeft"  && nav.prevStageUrl)   { e.preventDefault(); location.href = nav.prevStageUrl; }
-      if (e.key === "ArrowRight" && nav.nextStageUrl)   { e.preventDefault(); location.href = nav.nextStageUrl; }
-      if (e.key === "ArrowUp"    && nav.prevChapterUrl) { e.preventDefault(); location.href = nav.prevChapterUrl; }
-      if (e.key === "ArrowDown"  && nav.nextChapterUrl) { e.preventDefault(); location.href = nav.nextChapterUrl; }
     });
   }
 })();
