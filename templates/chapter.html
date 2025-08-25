@@ -9,8 +9,8 @@
 {% endblock %}
 
 {% block content %}
-<h1>{{ chapter_name }}</h1>
-<p class="muted">{{ chapter_path }}</p>
+<!-- <h1>{{ chapter_name }}</h1>
+<p class="muted">{{ chapter_path }}</p> -->
 
 <!-- ★ 上：前チャプター -->
 <div class="vnav vnav-top">
@@ -27,6 +27,8 @@
   <section class="pane" data-filename="{{ f.filename }}">
     <header class="pane-head">
       <div class="pane-title">
+        <strong>{{ chapter_name }}</strong>
+        <span>-</spap>
         <strong>{{ f.label }}</strong>
         <span class="file">{{ f.filename }}</span>
         <span class="dirty" hidden>●未保存</span>

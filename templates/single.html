@@ -8,8 +8,8 @@
 </div>
 {% endblock %}
 {% block content %}
-<h1>{{ chapter_name }}</h1>
-<p class="muted">{{ chapter_path }} / <strong>{{ label }}</strong> <span class="file">{{ filename }}</span></p>
+<!-- <h1>{{ chapter_name }}</h1>
+<p class="muted">{{ chapter_path }} / <strong>{{ label }}</strong> <span class="file">{{ filename }}</span></p> -->
 
 <div class="single-rows">
   <!-- 上：前章 -->
@@ -36,6 +36,8 @@
     <section class="pane" id="singlePane" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
       <header class="pane-head">
         <div class="pane-title">
+          <strong>{{ chapter_name }}</strong>
+          <span>-</spap>
           <strong>{{ label }}</strong>
           <span class="file">{{ filename }}</span>
           <span class="dirty" hidden>●未保存</span>
