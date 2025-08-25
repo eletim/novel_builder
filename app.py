@@ -145,12 +145,16 @@ def chapter(chapter_path):
     notes_path = ch_dir / "notes.md"
     notes = notes_path.read_text(encoding="utf-8") if notes_path.exists() else ""
 
+    prev_chapter, next_chapter = get_chapter_neighbors(chapter_path)
+
     return render_template(
         "chapter.html",
         chapter_name=ch_dir.name,
         chapter_path=chapter_path,
         files=files,
-        notes=notes
+        notes=notes,
+        prev_chapter=prev_chapter, 
+        next_chapter=next_chapter 
     )
 
 @app.route("/chapter/<path:chapter_path>/single")

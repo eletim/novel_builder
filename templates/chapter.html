@@ -12,6 +12,16 @@
 <h1>{{ chapter_name }}</h1>
 <p class="muted">{{ chapter_path }}</p>
 
+<!-- ★ 上：前チャプター -->
+<div class="vnav vnav-top">
+  <a class="nav-arrow" aria-label="前の章へ (↑)"
+     href="{{ url_for('chapter', chapter_path=prev_chapter) }}">
+    <svg class="icon" aria-hidden="true"><use href="#i-chevron-up"></use></svg>
+    <span class="sr-only">前の章</span>
+  </a>
+  <small class="muted" style="margin-left:6px;">↑ / 前のチャプター</small>
+</div>
+
 <div class="grid4" id="editorGrid" data-chapter="{{ chapter_path }}">
   {% for f in files %}
   <section class="pane" data-filename="{{ f.filename }}">
@@ -28,6 +38,16 @@
     <textarea class="editor" spellcheck="false">{{ f.content }}</textarea>
   </section>
   {% endfor %}
+</div>
+
+<!-- ★ 下：次チャプター -->
+<div class="vnav vnav-bottom" style="margin-top:8px;">
+  <a class="nav-arrow" aria-label="次の章へ (↓)"
+     href="{{ url_for('chapter', chapter_path=next_chapter) }}">
+    <svg class="icon" aria-hidden="true"><use href="#i-chevron-down"></use></svg>
+    <span class="sr-only">次の章</span>
+  </a>
+  <small class="muted" style="margin-left:6px;">↓ / 次のチャプター</small>
 </div>
 
 <details id="notesWrap" class="notes" open hidden>
@@ -53,5 +73,10 @@
 {% block scripts %}
 <script>
   window.__CHAPTER_PATH__ = "{{ chapter_path }}";
+  // ★ JS用：上下移動URL
+  window.__GRID_NAV__ = {
+    prevChapterUrl: "{{ url_for('chapter', chapter_path=prev_chapter) }}",
+    nextChapterUrl: "{{ url_for('chapter', chapter_path=next_chapter) }}"
+  };
 </script>
 {% endblock %}
