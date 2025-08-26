@@ -27,10 +27,15 @@
   <section class="pane" data-filename="{{ f.filename }}">
     <header class="pane-head">
       <div class="pane-title">
-        <strong>{{ chapter_name }}</strong>
-        <span>-</spap>
-        <strong>{{ f.label }}</strong>
-        <span class="file">{{ f.filename }}</span>
+        <!-- タイトルをクリックで個別表示へ -->
+        <a class="title-link"
+           href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ f.filename }}"
+           title="個別表示：{{ f.label }}">
+          <strong>{{ chapter_name }}</strong>
+          <span class="sep">–</span>
+          <strong>{{ f.label }}</strong>
+          <span class="file">{{ f.filename }}</span>
+        </a>
         <span class="dirty" hidden>●未保存</span>
       </div>
       <div class="pane-tools">
