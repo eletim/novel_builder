@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% set page_class = "page-fullscreen" %}
+{% set title = chapter_name ~ " / " ~ label ~ " – 全画面" %}
+
+{% block header_right %}{% endblock %} {# 全画面ではヘッダー消す #}
+
+{% block content %}
+<div class="fs-root" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
+  <header class="fs-head">
+    {% set parts = chapter_name.split('-', 1) %}
+    <a class="ch-link" href="{{ url_for('chapter', chapter_path=chapter_path) }}">{{ parts[0] }}</a>
+    {% if parts|length > 1 %}<span class="ch-rest">-{{ parts[1] }}</span>{% endif %}
+    <span class="sep">–</span>
+    <strong>{{ label }}</strong>
+    <span class="file">{{ filename }}</span>
+    <span class="dirty" hidden>●未保存</span>
+    <div class="fs-head-tools">
+      <a class="btn" href="{{ url_for('chapter_single', chapter_path=chapter_path) }}?stage={{ filename }}">個別表示へ</a>
+      <button id="fsSaveBtn" class="btn">💾 保存（Ctrl+S）</button>
+      <span class="counter" title="改行は含めません"><span id="fsChar">0</span> 文字・<span id="fsLine">0</span> 行</span>
+    </div>
+  </header>
+
+  <div id="fsEditor" class="fs-editor" contenteditable="true" spellcheck="false" aria-label="全画面エディタ"></div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // ★ app.js より“後”でも OK（DOMContentLoaded 待ちで初期化するため）
+  window.__FULL__ = {
+    chapterPath: "{{ chapter_path }}",
+    filename: "{{ filename }}",
+    content: {{ content | tojson | safe }},
+    prevChapterUrl: "{{ url_for('chapter', chapter_path=prev_chapter) }}",
+    nextChapterUrl: "{{ url_for('chapter', chapter_path=next_chapter) }}"
+  };
+</script>
+{% endblock %}

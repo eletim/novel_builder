@@ -7,7 +7,7 @@
   <title>{{ title or "Novel GUI" }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{{ page_class|default('') }}">
   <header class="topbar">
     <div class="brand"><a href="{{ url_for('index') }}">📝 Novel GUI</a></div>
     {% block header_right %}{% endblock %}

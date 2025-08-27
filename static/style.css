@@ -213,3 +213,48 @@ h1{ margin:8px 0 6px; font-size:18px; }
 @media (prefers-reduced-motion:reduce){
   .nav-arrow, .btn{ transition:none; }
 }
+
+/* ===== Fullscreen Page ===== */
+.page-fullscreen .topbar,
+.page-fullscreen .foot { display:none !important; }
+.page-fullscreen .container { padding:0 !important; }
+
+/* 画面を完全に占有 */
+.fs-root{
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column;
+  background: var(--bg);
+}
+
+/* ヘッダー（上部の情報＋ボタン） */
+.fs-head{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  padding:10px 14px; border-bottom:1px solid var(--border);
+  background: var(--panel2);
+}
+.fs-head .file{ color:var(--muted); margin-left:8px; font-size:12px; }
+.fs-head .dirty{ color:var(--warn); margin-left:8px; font-size:12px; }
+.fs-head-tools{ margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+/* エディタ本体：残り全部を占有 */
+.fs-editor{
+  flex:1; min-height:0; width:100%;
+  padding: 20px;
+  background: var(--panel);
+  color: var(--fg);
+  border: 0; border-radius: 0; outline: none;
+  font: 20px/2.0 "Hiragino Sans","Noto Sans JP",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  white-space: pre-wrap; overflow-wrap:anywhere;
+  overflow:auto;  /* ビューポート内でスクロール */
+}
+
+/* 個別表示と同じリンク見た目 */
+.ch-link{ color:var(--fg); text-decoration:none; font-weight:700; padding:0 2px; border-bottom:1px dashed var(--border); }
+.ch-link:hover{ color:var(--accent); border-bottom-color:var(--accent); }
+.ch-rest{ color:var(--muted); margin-left:2px; }
+.sep{ color:var(--muted); margin:0 6px; }
+
+@media (max-width:900px){
+  .fs-editor{ font-size:18px; line-height:1.9; padding:14px; }
+}
+

@@ -194,6 +194,35 @@ def chapter_single(chapter_path):
         next_chapter=next_ch,
     )
 
+@app.route("/chapter/<path:chapter_path>/fullscreen")
+def chapter_fullscreen(chapter_path):
+    ch_dir = safe_join(ROOT_DIR, chapter_path)
+    if not ch_dir.exists() or not ch_dir.is_dir():
+        abort(404, description="Chapter not found")
+
+    stage_files = [f for f, _ in STAGES]
+    stage = request.args.get("stage")
+    if stage not in stage_files:
+        stage = stage_files[0]
+
+    label = dict(STAGES)[stage]
+    p = ch_dir / stage
+    content = p.read_text(encoding="utf-8") if p.exists() else ""
+
+    # 章の上下ナビ（キーボード移動用に渡す）
+    prev_ch, next_ch = get_chapter_neighbors(chapter_path)
+
+    return render_template(
+        "fullscreen.html",
+        chapter_name=ch_dir.name,
+        chapter_path=chapter_path,
+        filename=stage,
+        label=label,
+        content=content,
+        prev_chapter=prev_ch,
+        next_chapter=next_ch,
+    )
+
 @app.post("/api/save")
 def api_save():
     data = request.get_json(force=True, silent=False)

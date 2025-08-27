@@ -212,4 +212,84 @@
       if (e.key === "ArrowDown"  && nav.nextChapterUrl) { e.preventDefault(); location.href = nav.nextChapterUrl; }
     });
   })();
+
+  // ─────────────────────────────────────
+  // ④ フルスクリーン編集（fullscreen.html）
+  // ─────────────────────────────────────
+  (function initFullscreen() {
+    function start() {
+      const ctx = window.__FULL__;
+      const editor = document.getElementById("fsEditor");
+      const root = document.querySelector(".fs-root");
+      if (!ctx || !editor || !root) return;
+
+      const dirty = root.querySelector(".dirty");
+      const charEl = document.getElementById("fsChar");
+      const lineEl = document.getElementById("fsLine");
+
+      // 既存データを挿入（HTMLとしてではなく“テキストとして”）
+      editor.textContent = (ctx.content || "").replace(/\r/g, "");
+
+      function updateCounters() {
+        const normalized = editor.innerText.replace(/\r/g, "");
+        const chars = Array.from(normalized.replace(/\n/g, "")).length;
+        const lines = normalized === "" ? 0 : normalized.split("\n").length;
+        if (charEl) charEl.textContent = String(chars);
+        if (lineEl) lineEl.textContent = String(lines);
+      }
+      updateCounters();
+
+      // デバウンス・オートセーブ
+      let t = null;
+      editor.addEventListener("input", () => {
+        if (dirty) dirty.hidden = false;
+        updateCounters();
+        clearTimeout(t); t = setTimeout(save, 800);
+      });
+
+      async function save() {
+        const content = editor.innerText.replace(/\r/g, "");
+        const res = await fetch("/api/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ chapter_path: ctx.chapterPath, filename: ctx.filename, content })
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          showToast && showToast("保存に失敗: " + text, false);
+          return;
+        }
+        if (dirty) dirty.hidden = true;
+        showToast && showToast(`${ctx.filename} を保存しました`);
+      }
+
+      // ボタン/ショートカット
+      document.getElementById("fsSaveBtn")?.addEventListener("click", save);
+      window.addEventListener("keydown", (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
+      });
+
+      // 章移動（ステージは維持）
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowUp" && ctx.prevChapterUrl) {
+          e.preventDefault(); location.href = ctx.prevChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
+        }
+        if (e.key === "ArrowDown" && ctx.nextChapterUrl) {
+          e.preventDefault(); location.href = ctx.nextChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
+        }
+      });
+
+      // 離脱ガード
+      window.addEventListener("beforeunload", (e) => {
+        if (dirty && !dirty.hidden) { e.preventDefault(); e.returnValue = ""; }
+      });
+    }
+
+    // ★ ここがポイント：DOM 構築完了後に開始（__FULL__ もこの時点で存在）
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", start);
+    } else {
+      start();
+    }
+  })();
 })();

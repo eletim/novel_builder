@@ -4,6 +4,7 @@
 {% block header_right %}
 <div class="actions">
   <a class="btn" href="{{ url_for('chapter', chapter_path=chapter_path) }}">一覧表示</a>
+  <a class="btn" href="{{ url_for('chapter_fullscreen', chapter_path=chapter_path) }}?stage={{ filename }}">全画面編集</a>
   <button id="saveBtn" class="btn">💾 保存（Ctrl+S）</button>
 </div>
 {% endblock %}
