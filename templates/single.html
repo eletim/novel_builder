@@ -36,8 +36,14 @@
     <section class="pane" id="singlePane" data-chapter="{{ chapter_path }}" data-filename="{{ filename }}">
       <header class="pane-head">
         <div class="pane-title">
-          <strong>{{ chapter_name }}</strong>
-          <span>-</spap>
+          {# 先頭の CHxx を取り出してリンク化 #}
+          {% set parts = chapter_name.split('-', 1) %}
+          <a class="ch-link" href="{{ url_for('chapter', chapter_path=chapter_path) }}"
+             title="一覧表示へ">{{ parts[0] }}</a>
+          {% if parts|length > 1 %}
+            <span class="ch-rest">-{{ parts[1] }}</span>
+          {% endif %}
+          <span class="sep">–</span>
           <strong>{{ label }}</strong>
           <span class="file">{{ filename }}</span>
           <span class="dirty" hidden>●未保存</span>

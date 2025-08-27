@@ -74,6 +74,18 @@ h1 { margin: 8px 0 6px; font-size: 18px; }
 }
 .pane-title .sep { color: var(--muted); margin: 0 4px; }
 
+.pane-title .ch-link {
+  color: var(--fg);
+  text-decoration: none;
+  font-weight: 700;
+  padding: 0 2px;
+  border-bottom: 1px dashed var(--border);
+}
+.pane-title .ch-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
+.pane-title .ch-rest { color: var(--muted); margin-left: 2px; }
+.pane-title .sep { color: var(--muted); margin: 0 6px; }
+
+
 .pane-head {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 10px; background: #151a24; border-bottom: 1px solid var(--border);
