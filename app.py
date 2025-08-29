@@ -23,27 +23,53 @@ def safe_join(base: Path, relative: str) -> Path:
         abort(400, description="Invalid path")
     return target
 
+def read_title(dir_path: Path) -> str | None:
+    """
+    ディレクトリ内の title ファイルからタイトルを読み取る。
+    - 優先: title.txt > title.md > .title
+    - 先頭行のみ利用。Markdown の # 見出しがあれば除去。
+    """
+    for name in ("title.txt", "title.md", ".title"):
+        p = dir_path / name
+        if p.exists() and p.is_file():
+            text = p.read_text(encoding="utf-8", errors="ignore").strip()
+            if not text:
+                return None
+            first = text.splitlines()[0].strip()
+            first = re.sub(r"^\s*#+\s*", "", first)  # 先頭 # を除去
+            return first or None
+    return None
+
 def iter_structure():
     if not ROOT_DIR.exists():
         return []
     series_list = []
     for series in sorted([p for p in ROOT_DIR.iterdir() if p.is_dir() and p.name.startswith("series-")]):
+        s_title = read_title(series)
         vols = []
         for vol in sorted([v for v in series.iterdir() if v.is_dir() and v.name.startswith("vol-")]):
+            v_title = read_title(vol)
             chapters = []
             for ch in sorted([c for c in vol.iterdir() if c.is_dir() and c.name.startswith("CH")]):
+                c_title = read_title(ch)
                 chapters.append({
                     "name": ch.name,
+                    "title": c_title,
                     "relpath": str(ch.relative_to(ROOT_DIR)).replace("\\", "/"),
                 })
             vols.append({
                 "name": vol.name,
+                "title": v_title,
                 "relpath": str(vol.relative_to(ROOT_DIR)).replace("\\", "/"),
-                "next_ch": compute_next_ch_name(vol)  # ★ 追加
-                ,
+                "next_ch": compute_next_ch_name(vol),
                 "chapters": chapters
             })
-        series_list.append({"name": series.name, "volumes": vols})
+        series_list.append({
+            "name": series.name,
+            "title": s_title,
+            "relpath": str(series.relative_to(ROOT_DIR)).replace("\\", "/"),  # ★追加
+            "volumes": vols
+        })
     return series_list
 
 def get_chapter_neighbors(chapter_path: str):
@@ -244,6 +270,33 @@ def api_save():
     target = ch_dir / filename
     target.write_text(content, encoding="utf-8")
     return jsonify({"ok": True, "path": str(target)})
+
+@app.post("/api/set_title")
+def api_set_title():
+    data = request.get_json(force=True, silent=False)
+    rel_path = data.get("path")     # series-xx / .../vol-xx / .../CHxx-...
+    title = (data.get("title") or "").strip()
+
+    if not rel_path:
+        abort(400, description="path is required")
+
+    target_dir = safe_join(ROOT_DIR, rel_path)
+    if not target_dir.exists() or not target_dir.is_dir():
+        abort(404, description="target directory not found")
+
+    title_txt = target_dir / "title.txt"
+    # 空なら既存のタイトルファイルを削除
+    if title == "":
+        for name in ("title.txt", "title.md", ".title"):
+            p = target_dir / name
+            if p.exists():
+                try: p.unlink()
+                except Exception: pass
+        return jsonify({"ok": True, "title": None})
+
+    # 1行目だけ保存（末尾改行付与）
+    title_txt.write_text(title + "\n", encoding="utf-8")
+    return jsonify({"ok": True, "title": title})
 
 if __name__ == "__main__":
     ROOT_DIR.mkdir(parents=True, exist_ok=True)

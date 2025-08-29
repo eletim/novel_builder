@@ -9,13 +9,13 @@
     <label for="volumeSelect">巻を選択：</label>
     <select id="volumeSelect">
       {% for s in data %}
-      <optgroup label="{{ s.name }}">
+      <optgroup label="{{ s.title or s.name }}" data-path="{{ s.relpath }}">
         {% for v in s.volumes %}
         <option
           value="{{ v.relpath }}"
-          data-next="{{ v.next_ch or '' }}"
+          data-path="{{ v.relpath }}"
         >
-          {{ v.name }}
+          {{ v.title or v.name }}
         </option>
         {% endfor %}
       </optgroup>
@@ -36,14 +36,20 @@
 <div class="tree">
   {% for s in data %}
   <details open>
-    <summary class="series">{{ s.name }}</summary>
+   <summary class="series" data-kind="series" data-path="{{ s.relpath }}">
+     <span class="t-display">{{ s.title or s.name }}</span>
+     <button type="button" class="btn btn-xs t-edit" aria-label="シリーズタイトルを編集">✏️</button>
+     <input class="t-input" type="text" value="{{ s.title or '' }}" placeholder="シリーズタイトル" hidden>
+   </summary>
     {% for v in s.volumes %}
     <details open>
-      <summary class="volume">{{ v.name }}</summary>
+      <summary class="volume">{{ v.title or v.name }}</summary>
       <ul>
         {% for ch in v.chapters %}
-        <li>
-          <a class="chapter-link" href="{{ url_for('chapter', chapter_path=ch.relpath) }}">{{ ch.name }}</a>
+        <li data-kind="chapter" data-path="{{ ch.relpath }}">
+          <a class="chapter-link" href="{{ url_for('chapter', chapter_path=ch.relpath) }}">{{ ch.title or ch.name }}</a>
+          <button type="button" class="btn btn-xs t-edit" aria-label="章タイトルを編集">✏️</button>
+          <input class="t-input" type="text" value="{{ ch.title or '' }}" placeholder="章タイトル" hidden>
         </li>
         {% endfor %}
       </ul>

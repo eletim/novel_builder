@@ -258,3 +258,15 @@ h1{ margin:8px 0 6px; font-size:18px; }
   .fs-editor{ font-size:18px; line-height:1.9; padding:14px; }
 }
 
+.btn.btn-xs{
+  padding: 2px 6px;
+  font-size: 12px;
+  border-radius: 6px;
+  margin-left: 6px;
+}
+.t-input{
+  font: inherit; color: var(--fg);
+  background: var(--panel); border:1px solid var(--border);
+  border-radius:6px; padding: 4px 6px; margin-left: 6px;
+}
+.summary .t-input, summary .t-input { width: 40ch; max-width: 90%; }
