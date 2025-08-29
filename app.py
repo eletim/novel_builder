@@ -248,4 +248,4 @@ def api_save():
 if __name__ == "__main__":
     ROOT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"* NOVEL_ROOT: {ROOT_DIR}")
-    app.run(debug=False)
+    app.run(host="0.0.0.0", port=5000, debug=False)

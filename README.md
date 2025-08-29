@@ -1,7 +1,7 @@
 # 小説フォルダのルート（例）を環境変数で指定
 export NOVEL_ROOT=/home/eletim/novel/novel_builder/data
 # サーバ起動
-python app.py
+python3 app.py
 
 
 
@@ -22,5 +22,4 @@ python app.py
 │   │   │   └── notes.md
 │   │   └── ...（続く）
 │   └── vol-02-[arc-slug]/ ...
-ChatGPT:
-思考時間: 1m 7s
+
