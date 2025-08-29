@@ -3,31 +3,6 @@
 {% block content %}
 <h1>シリーズ / 巻 / 章 一覧</h1>
 
-<!-- ★ 新規チャプター作成ボックス -->
-<div class="new-chapter-box">
-  <div class="new-chapter-row">
-    <label for="volumeSelect">巻を選択：</label>
-    <select id="volumeSelect">
-      {% for s in data %}
-      <optgroup label="{{ s.title or s.name }}" data-path="{{ s.relpath }}">
-        {% for v in s.volumes %}
-        <option
-          value="{{ v.relpath }}"
-          data-path="{{ v.relpath }}"
-        >
-          {{ v.title or v.name }}
-        </option>
-        {% endfor %}
-      </optgroup>
-      {% endfor %}
-    </select>
-
-    <span class="next-label">次に作成: <strong id="nextChLabel">—</strong></span>
-    <button id="createChBtn" class="btn">＋ チャプター作成</button>
-  </div>
-  <small class="muted">チャプター名は <code>CH01</code> 〜 <code>CH99</code> の連番で自動採番されます。</small>
-</div>
-
 {% if not data %}
 <p>フォルダが見つかりませんでした。<br>
 <code>{{ root }}</code> に <code>series-*</code> / <code>vol-*</code> / <code>CH**-*</code> を作成してください。</p>
@@ -43,7 +18,11 @@
    </summary>
     {% for v in s.volumes %}
     <details open>
-      <summary class="volume">{{ v.title or v.name }}</summary>
+      <summary class="volume" data-kind="volume" data-path="{{ v.relpath }}">
+        <span class="t-display">{{ v.title or v.name }}</span>
+        <button type="button" class="btn btn-xs t-edit" aria-label="巻タイトルを編集">✏️</button>
+        <input class="t-input" type="text" value="{{ v.title or '' }}" placeholder="巻タイトル" hidden>
+      </summary>
       <ul>
         {% for ch in v.chapters %}
         <li data-kind="chapter" data-path="{{ ch.relpath }}">
@@ -53,6 +32,14 @@
         </li>
         {% endfor %}
       </ul>
+      <div class="vol-create">
+        <small class="muted">次に作成: <strong>{{ v.next_ch or "—" }}</strong></small>
+        <button
+          class="btn vol-create-btn"
+          data-vol="{{ v.relpath }}"
+          {% if not v.next_ch %}disabled title="この巻はCH99まで埋まっています"{% endif %}
+        >＋ チャプター作成</button>
+      </div>
     </details>
     {% endfor %}
   </details>
