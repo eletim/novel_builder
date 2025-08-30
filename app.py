@@ -16,6 +16,13 @@ STAGES = [
     ("40.final.md",  "Final（完成）"),
 ]
 
+VOL_STAGES = [
+    ("10.plot.md",   "Concept Plot"),
+    ("20.script.md", "Character Plot"),
+    ("30.draft.md",  "Draft Plot"),
+    ("40.final.md",  "Final Plot"),
+]
+
 OUTLINE_DIRNAME = "_outline"
 
 def get_outline_dir(volume_relpath: str) -> Path:
@@ -168,7 +175,7 @@ def api_create_outline():
 
     outline_dir.mkdir(parents=True, exist_ok=False)
     # 4ステージ＋notes、title
-    for filename, _label in STAGES:
+    for filename, _label in VOL_STAGES:
         (outline_dir / filename).write_text("", encoding="utf-8")
     (outline_dir / "notes.md").write_text("", encoding="utf-8")
     (outline_dir / "title.txt").write_text("全体プロット\n", encoding="utf-8")
@@ -182,24 +189,6 @@ def api_create_outline():
         "fullscreen_url": url_for("v_outline_fullscreen", volume_path=volume_path)
     })
 
-@app.post("/api/create_chapter")
-def api_create_chapter():
-    data = request.get_json(force=True, silent=False)
-    volume_path = data.get("volume_path")
-    if not volume_path:
-        abort(400, description="volume_path is required")
-
-    ch_dir = create_chapter_under_volume(volume_path)
-    relpath = str(ch_dir.relative_to(ROOT_DIR)).replace("\\", "/")
-
-    return jsonify({
-        "ok": True,
-        "chapter_name": ch_dir.name,
-        "chapter_relpath": relpath,
-        "chapter_url": url_for("chapter", chapter_path=relpath),
-        "single_url": url_for("chapter_single", chapter_path=relpath)  # stageはデフォ(10.plot.md)
-    })
-
 @app.route("/volume/<path:volume_path>/outline")
 def v_outline(volume_path):
     outline_dir = get_outline_dir(volume_path)
@@ -207,7 +196,7 @@ def v_outline(volume_path):
         abort(404, description="Outline not found")
 
     files = []
-    for filename, label in STAGES:
+    for filename, label in VOL_STAGES:
         p = outline_dir / filename
         files.append({
             "filename": filename,
@@ -234,12 +223,12 @@ def v_outline_single(volume_path):
     if not outline_dir.exists() or not outline_dir.is_dir():
         abort(404, description="Outline not found")
 
-    stage_files = [f for f, _ in STAGES]
+    stage_files = [f for f, _ in VOL_STAGES]
     stage = request.args.get("stage")
     if stage not in stage_files:
         stage = stage_files[0]
 
-    label = dict(STAGES)[stage]
+    label = dict(VOL_STAGES)[stage]
     p = outline_dir / stage
     content = p.read_text(encoding="utf-8") if p.exists() else ""
     idx = stage_files.index(stage)
@@ -266,12 +255,12 @@ def v_outline_fullscreen(volume_path):
     if not outline_dir.exists() or not outline_dir.is_dir():
         abort(404, description="Outline not found")
 
-    stage_files = [f for f, _ in STAGES]
+    stage_files = [f for f, _ in VOL_STAGES]
     stage = request.args.get("stage")
     if stage not in stage_files:
         stage = stage_files[0]
 
-    label = dict(STAGES)[stage]
+    label = dict(VOL_STAGES)[stage]
     p = outline_dir / stage
     content = p.read_text(encoding="utf-8") if p.exists() else ""
     vol_title = read_title(outline_dir.parent)
@@ -288,6 +277,24 @@ def v_outline_fullscreen(volume_path):
         content=content,
         prev_chapter="", next_chapter=""
     )
+
+@app.post("/api/create_chapter")
+def api_create_chapter():
+    data = request.get_json(force=True, silent=False)
+    volume_path = data.get("volume_path")
+    if not volume_path:
+        abort(400, description="volume_path is required")
+
+    ch_dir = create_chapter_under_volume(volume_path)
+    relpath = str(ch_dir.relative_to(ROOT_DIR)).replace("\\", "/")
+
+    return jsonify({
+        "ok": True,
+        "chapter_name": ch_dir.name,
+        "chapter_relpath": relpath,
+        "chapter_url": url_for("chapter", chapter_path=relpath),
+        "single_url": url_for("chapter_single", chapter_path=relpath)  # stageはデフォ(10.plot.md)
+    })
 
 @app.route("/chapter/<path:chapter_path>")
 def chapter(chapter_path):
