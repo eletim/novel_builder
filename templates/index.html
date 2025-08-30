@@ -32,6 +32,23 @@
         </li>
         {% endfor %}
       </ul>
+      <div class="vol-outline">
+        {% if v.outline.exists %}
+          <div class="vol-outline-row">
+            <span class="muted">全体プロット：</span>
+            <a class="chapter-link" href="{{ url_for('v_outline', volume_path=v.relpath) }}">
+              {{ v.outline.title or "_outline" }}
+            </a>
+            <a class="btn btn-xs" href="{{ url_for('v_outline_single', volume_path=v.relpath) }}">個別表示</a>
+            <a class="btn btn-xs" href="{{ url_for('v_outline_fullscreen', volume_path=v.relpath) }}">全画面</a>
+          </div>
+        {% else %}
+          <div class="vol-outline-row">
+            <span class="muted">全体プロット：</span>
+            <button class="btn vol-outline-create-btn" data-vol="{{ v.relpath }}">＋ 作成</button>
+          </div>
+        {% endif %}
+      </div>
       <div class="vol-create">
         <small class="muted">次に作成: <strong>{{ v.next_ch or "—" }}</strong></small>
         <button

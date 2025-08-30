@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set title = (volume_title or volume_name) ~ " / 全体プロット / " ~ label %}
+{% block header_right %}
+<div class="actions">
+  <a class="btn" href="{{ url_for('v_outline', volume_path=volume_path) }}">一覧表示</a>
+  <a class="btn" href="{{ url_for('v_outline_fullscreen', volume_path=volume_path) }}?stage={{ filename }}">全画面</a>
+  <button id="saveBtn" class="btn">💾 保存（Ctrl+S）</button>
+</div>
+{% endblock %}
+{% block content %}
+<div class="single-rows">
+  <div class="single-middle">
+    <div class="side side-left">
+      <a class="nav-arrow" aria-label="前ステージ (←)" href="{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ prev_stage }}">
+        <svg class="icon"><use href="#i-chevron-left"></use></svg><span class="sr-only">前ステージ</span>
+      </a>
+    </div>
+
+    <section class="pane" id="singlePane" data-chapter="{{ outline_path }}" data-filename="{{ filename }}">
+      <header class="pane-head">
+        <div class="pane-title">
+          <strong>{{ label }}</strong>
+          <span class="file">{{ filename }}</span>
+          <span class="dirty" hidden>●未保存</span>
+        </div>
+        <div class="pane-tools">
+          <span class="counter" title="改行は含めません"><span id="charCount">0</span> 文字・<span id="lineCount">0</span> 行</span>
+          <button class="btn" id="saveBtn2">保存</button>
+        </div>
+      </header>
+      <textarea class="editor" id="singleEditor" spellcheck="false" wrap="soft">{{ content }}</textarea>
+    </section>
+
+    <div class="side side-right">
+      <a class="nav-arrow" aria-label="次ステージ (→)" href="{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ next_stage }}">
+        <svg class="icon"><use href="#i-chevron-right"></use></svg><span class="sr-only">次ステージ</span>
+      </a>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.__SINGLE__ = {
+  prevStageUrl: "{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ prev_stage }}",
+  nextStageUrl: "{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ next_stage }}"
+};
+</script>
+{% endblock %}

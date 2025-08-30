@@ -48,6 +48,31 @@
         }
       });
     });
+
+    // ★ アウトライン作成
+    const oBtns = $$(".vol-outline-create-btn");
+    if (oBtns.length) {
+      oBtns.forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const volume_path = btn.dataset.vol;
+          if (!volume_path) return;
+          btn.disabled = true;
+          try {
+            const res = await fetch("/api/create_outline", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ volume_path })
+            });
+            if (!res.ok) throw new Error(await res.text());
+            const data = await res.json();
+            location.href = data.single_url; // すぐ編集に入る
+          } catch (e) {
+            alert("作成に失敗しました: " + (e?.message || e));
+            btn.disabled = false;
+          }
+        });
+      });
+    }
   })();
 
   // タイトル編集（シリーズ/巻/章）

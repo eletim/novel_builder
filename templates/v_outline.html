@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set title = (volume_title or volume_name) ~ " / 全体プロット" %}
+{% block header_right %}
+<div class="actions">
+  <a class="btn" href="{{ url_for('v_outline_single', volume_path=volume_path) }}">個別表示</a>
+  <button id="saveAllBtn" class="btn">💾 すべて保存（Ctrl+S）</button>
+  <a class="btn" href="{{ url_for('index') }}">一覧へ</a>
+</div>
+{% endblock %}
+{% block content %}
+<h1>{{ volume_title or volume_name }} / 全体プロット</h1>
+<p class="muted">{{ outline_path }}</p>
+
+<div class="grid4" id="editorGrid" data-chapter="{{ outline_path }}">
+  {% for f in files %}
+  <section class="pane" data-filename="{{ f.filename }}">
+    <header class="pane-head">
+      <div class="pane-title">
+        <strong>{{ f.label }}</strong>
+        <span class="file">{{ f.filename }}</span>
+        <span class="dirty" hidden>●未保存</span>
+      </div>
+      <div class="pane-tools"><button class="btn btn-save">保存</button></div>
+    </header>
+    <textarea class="editor" spellcheck="false">{{ f.content }}</textarea>
+  </section>
+  {% endfor %}
+</div>
+
+<details id="notesWrap" class="notes" open>
+  <summary>notes.md</summary>
+  <section class="pane" data-filename="notes.md">
+    <header class="pane-head">
+      <div class="pane-title">
+        <strong>Notes</strong>
+        <span class="file">notes.md</span>
+        <span class="dirty" hidden>●未保存</span>
+      </div>
+      <div class="pane-tools"><button class="btn btn-save">保存</button></div>
+    </header>
+    <textarea class="editor" spellcheck="false" wrap="soft">{{ notes }}</textarea>
+  </section>
+</details>
+
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+{% block scripts %}
+<script>window.__CHAPTER_PATH__ = "{{ outline_path }}";</script>
+{% endblock %}

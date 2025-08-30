@@ -16,6 +16,12 @@ STAGES = [
     ("40.final.md",  "Final（完成）"),
 ]
 
+OUTLINE_DIRNAME = "_outline"
+
+def get_outline_dir(volume_relpath: str) -> Path:
+    vol_dir = safe_join(ROOT_DIR, volume_relpath)
+    return vol_dir / OUTLINE_DIRNAME
+
 def safe_join(base: Path, relative: str) -> Path:
     # chapter_path（series-xx/vol-xx/CHxx-yyy）を安全に結合
     target = (base / relative).resolve()
@@ -39,7 +45,6 @@ def read_title(dir_path: Path) -> str | None:
             first = re.sub(r"^\s*#+\s*", "", first)  # 先頭 # を除去
             return first or None
     return None
-
 def iter_structure():
     if not ROOT_DIR.exists():
         return []
@@ -49,6 +54,7 @@ def iter_structure():
         vols = []
         for vol in sorted([v for v in series.iterdir() if v.is_dir() and v.name.startswith("vol-")]):
             v_title = read_title(vol)
+            # 章
             chapters = []
             for ch in sorted([c for c in vol.iterdir() if c.is_dir() and c.name.startswith("CH")]):
                 c_title = read_title(ch)
@@ -57,17 +63,28 @@ def iter_structure():
                     "title": c_title,
                     "relpath": str(ch.relative_to(ROOT_DIR)).replace("\\", "/"),
                 })
+            # ★ アウトライン
+            outline_dir = vol / OUTLINE_DIRNAME
+            outline_exists = outline_dir.is_dir()
+            outline_rel = str(outline_dir.relative_to(ROOT_DIR)).replace("\\", "/") if outline_exists else None
+            outline_title = read_title(outline_dir) if outline_exists else None
+
             vols.append({
                 "name": vol.name,
                 "title": v_title,
                 "relpath": str(vol.relative_to(ROOT_DIR)).replace("\\", "/"),
                 "next_ch": compute_next_ch_name(vol),
-                "chapters": chapters
+                "chapters": chapters,
+                "outline": {
+                    "exists": outline_exists,
+                    "relpath": outline_rel,
+                    "title": outline_title,
+                }
             })
         series_list.append({
             "name": series.name,
             "title": s_title,
-            "relpath": str(series.relative_to(ROOT_DIR)).replace("\\", "/"),  # ★追加
+            "relpath": str(series.relative_to(ROOT_DIR)).replace("\\", "/"),
             "volumes": vols
         })
     return series_list
@@ -134,6 +151,37 @@ def index():
     data = iter_structure()
     return render_template("index.html", data=data, root=str(ROOT_DIR))
 
+@app.post("/api/create_outline")
+def api_create_outline():
+    data = request.get_json(force=True, silent=False)
+    volume_path = data.get("volume_path")
+    if not volume_path:
+        abort(400, description="volume_path is required")
+
+    vol_dir = safe_join(ROOT_DIR, volume_path)
+    if not vol_dir.exists() or not vol_dir.is_dir():
+        abort(404, description="Volume not found")
+
+    outline_dir = vol_dir / OUTLINE_DIRNAME
+    if outline_dir.exists():
+        abort(409, description="Already exists")
+
+    outline_dir.mkdir(parents=True, exist_ok=False)
+    # 4ステージ＋notes、title
+    for filename, _label in STAGES:
+        (outline_dir / filename).write_text("", encoding="utf-8")
+    (outline_dir / "notes.md").write_text("", encoding="utf-8")
+    (outline_dir / "title.txt").write_text("全体プロット\n", encoding="utf-8")
+
+    rel = str(outline_dir.relative_to(ROOT_DIR)).replace("\\", "/")
+    return jsonify({
+        "ok": True,
+        "outline_relpath": rel,
+        "list_url": url_for("v_outline", volume_path=volume_path),
+        "single_url": url_for("v_outline_single", volume_path=volume_path),
+        "fullscreen_url": url_for("v_outline_fullscreen", volume_path=volume_path)
+    })
+
 @app.post("/api/create_chapter")
 def api_create_chapter():
     data = request.get_json(force=True, silent=False)
@@ -151,6 +199,95 @@ def api_create_chapter():
         "chapter_url": url_for("chapter", chapter_path=relpath),
         "single_url": url_for("chapter_single", chapter_path=relpath)  # stageはデフォ(10.plot.md)
     })
+
+@app.route("/volume/<path:volume_path>/outline")
+def v_outline(volume_path):
+    outline_dir = get_outline_dir(volume_path)
+    if not outline_dir.exists() or not outline_dir.is_dir():
+        abort(404, description="Outline not found")
+
+    files = []
+    for filename, label in STAGES:
+        p = outline_dir / filename
+        files.append({
+            "filename": filename,
+            "label": label,
+            "content": p.read_text(encoding="utf-8") if p.exists() else "",
+        })
+    notes_path = outline_dir / "notes.md"
+    notes = notes_path.read_text(encoding="utf-8") if notes_path.exists() else ""
+    vol_title = read_title(outline_dir.parent)
+
+    return render_template(
+        "v_outline.html",
+        volume_path=volume_path,
+        outline_path=str(outline_dir.relative_to(ROOT_DIR)).replace("\\", "/"),
+        volume_name=outline_dir.parent.name,
+        volume_title=vol_title,
+        files=files,
+        notes=notes,
+    )
+
+@app.route("/volume/<path:volume_path>/outline/single")
+def v_outline_single(volume_path):
+    outline_dir = get_outline_dir(volume_path)
+    if not outline_dir.exists() or not outline_dir.is_dir():
+        abort(404, description="Outline not found")
+
+    stage_files = [f for f, _ in STAGES]
+    stage = request.args.get("stage")
+    if stage not in stage_files:
+        stage = stage_files[0]
+
+    label = dict(STAGES)[stage]
+    p = outline_dir / stage
+    content = p.read_text(encoding="utf-8") if p.exists() else ""
+    idx = stage_files.index(stage)
+    prev_stage = stage_files[(idx - 1) % len(stage_files)]
+    next_stage = stage_files[(idx + 1) % len(stage_files)]
+    vol_title = read_title(outline_dir.parent)
+
+    return render_template(
+        "v_outline_single.html",
+        volume_path=volume_path,
+        outline_path=str(outline_dir.relative_to(ROOT_DIR)).replace("\\", "/"),
+        volume_name=outline_dir.parent.name,
+        volume_title=vol_title,
+        filename=stage,
+        label=label,
+        content=content,
+        prev_stage=prev_stage,
+        next_stage=next_stage,
+    )
+
+@app.route("/volume/<path:volume_path>/outline/fullscreen")
+def v_outline_fullscreen(volume_path):
+    outline_dir = get_outline_dir(volume_path)
+    if not outline_dir.exists() or not outline_dir.is_dir():
+        abort(404, description="Outline not found")
+
+    stage_files = [f for f, _ in STAGES]
+    stage = request.args.get("stage")
+    if stage not in stage_files:
+        stage = stage_files[0]
+
+    label = dict(STAGES)[stage]
+    p = outline_dir / stage
+    content = p.read_text(encoding="utf-8") if p.exists() else ""
+    vol_title = read_title(outline_dir.parent)
+
+    # 章の上下ナビは無し → 空文字を渡す
+    return render_template(
+        "v_outline_fullscreen.html",
+        volume_path=volume_path,
+        outline_path=str(outline_dir.relative_to(ROOT_DIR)).replace("\\", "/"),
+        volume_name=outline_dir.parent.name,
+        volume_title=vol_title,
+        filename=stage,
+        label=label,
+        content=content,
+        prev_chapter="", next_chapter=""
+    )
 
 @app.route("/chapter/<path:chapter_path>")
 def chapter(chapter_path):

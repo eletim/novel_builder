@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% set page_class = "page-fullscreen" %}
+{% set title = (volume_title or volume_name) ~ " / 全体プロット – 全画面" %}
+{% block header_right %}{% endblock %}
+{% block content %}
+<div class="fs-root" data-chapter="{{ outline_path }}" data-filename="{{ filename }}">
+  <header class="fs-head">
+    <a class="ch-link" href="{{ url_for('v_outline', volume_path=volume_path) }}">全体プロット</a>
+    <span class="sep">–</span>
+    <strong>{{ label }}</strong>
+    <span class="file">{{ filename }}</span>
+    <span class="dirty" hidden>●未保存</span>
+    <div class="fs-head-tools">
+      <a class="btn" href="{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ filename }}">個別表示へ</a>
+      <button id="fsSaveBtn" class="btn">💾 保存（Ctrl+S）</button>
+      <span class="counter"><span id="fsChar">0</span> 文字・<span id="fsLine">0</span> 行</span>
+    </div>
+  </header>
+  <div id="fsEditor" class="fs-editor" contenteditable="true" spellcheck="false"></div>
+</div>
+<div id="toast" class="toast" hidden></div>
+{% endblock %}
+{% block scripts %}
+<script>
+window.__FULL__ = {
+  chapterPath: "{{ outline_path }}",
+  filename: "{{ filename }}",
+  content: {{ content | tojson | safe }},
+  prevChapterUrl: "", nextChapterUrl: ""
+};
+</script>
+{% endblock %}
