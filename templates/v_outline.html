@@ -16,8 +16,14 @@
   <section class="pane" data-filename="{{ f.filename }}">
     <header class="pane-head">
       <div class="pane-title">
-        <strong>{{ f.label }}</strong>
-        <span class="file">{{ f.filename }}</span>
+        <a class="title-link"
+            href="{{ url_for('v_outline_single', volume_path=volume_path) }}?stage={{ f.filename }}"
+            title="個別表示：{{ f.label }}">
+            <strong>{{ volume_title or volume_name }}</strong>
+            <span class="sep">–</span>
+            <strong>{{ f.label }}</strong>
+            <span class="file">{{ f.filename }}</span>
+        </a>
         <span class="dirty" hidden>●未保存</span>
       </div>
       <div class="pane-tools"><button class="btn btn-save">保存</button></div>

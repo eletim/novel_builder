@@ -19,6 +19,12 @@
     <section class="pane" id="singlePane" data-chapter="{{ outline_path }}" data-filename="{{ filename }}">
       <header class="pane-head">
         <div class="pane-title">
+          <a class="ch-link"
+          href="{{ url_for('v_outline', volume_path=volume_path) }}"
+          title="一覧表示へ">
+          {{ volume_title or volume_name }}
+          </a>
+          <span class="sep">–</span>
           <strong>{{ label }}</strong>
           <span class="file">{{ filename }}</span>
           <span class="dirty" hidden>●未保存</span>
