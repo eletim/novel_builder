@@ -336,3 +336,37 @@ h1{ margin:8px 0 6px; font-size:18px; }
 
 /*（任意）保険。hidden を使うコードが残っていても確実に消える */
 [hidden]{ display:none !important; }
+
+/* Accordion states for heading sections */
+.sec-item.has-heading.open   .sec-body      { display:block; }
+.sec-item.has-heading.closed .sec-body      { display:none;  }
+
+.sec-item.has-heading.open   .sec-head-input{ display:block; }
+.sec-item.has-heading.closed .sec-head-input{ display:none;  }
+
+.sec-item.has-heading.open   .sec-head-text { display:none;  }
+.sec-item.has-heading.closed .sec-head-text { 
+  display:block;
+  width:100%;
+  text-align:left;
+  background:transparent;
+  border:0;
+  color:var(--fg);
+  font:14px/1.4 system-ui, sans-serif;
+  cursor:pointer;
+  padding:0;
+}
+
+/* OPEN 時は本文を少し大きく・余白広めに */
+.sec-item.open .sec-body{
+  /* いま 360px → もっと大きく */
+  min-height: 70vh;        /* 画面高の 70% を最低高さに */
+  font-size: 14.5px;
+  line-height: 1.75;
+  padding: 16px;
+  border-top: 0;
+}
+
+
+/* no-heading（冒頭）は常時表示（トグル不可） */
+.sec-item.no-heading .sec-body{ display:block; }

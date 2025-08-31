@@ -296,7 +296,7 @@
 
     // ---- ここから分割表示ロジック ---------------------------------
 
-    // Markdown見出しで区切る (#..###### の行)
+    // Markdown見出しで区切る（# のみ対象）
     function parseSections(text) {
       const lines = text.replace(/\r/g, "").split("\n");
       const sections = [];
@@ -340,7 +340,46 @@
       return parts.join("\n");
     }
 
-    // DOMへ描画（編集→即合成→#singleEditorへ反映）
+    // 現在のDOM（sec-item群）からテキストを合成
+    function collectFromDOM() {
+      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
+      const out = [];
+      items.forEach((el, i) => {
+        const headInput = el.querySelector(".sec-head-input");
+        const bodyTa    = el.querySelector(".sec-body");
+        if (headInput) out.push(headInput.value.replace(/\r/g, ""));
+        if (bodyTa && bodyTa.value !== "") out.push(bodyTa.value.replace(/\r/g, ""));
+        if (i !== items.length - 1) out.push("");
+      });
+      return out.join("\n");
+    }
+
+    // OPEN/CLOSE を1つに保つ
+    let openIndex = -1; // 最初の # セクションを後で OPEN にする
+    function setOpen(idx) {
+      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item.has-heading"));
+      items.forEach((el, i) => {
+        const input = el.querySelector(".sec-head-input");
+        const body  = el.querySelector(".sec-body");
+        if (i === idx) {
+          el.classList.add("open");
+          el.classList.remove("closed");
+          if (input) { input.disabled = false; input.tabIndex = 0; }
+          if (body)  { body.disabled  = false; }
+        } else {
+          el.classList.remove("open");
+          el.classList.add("closed");
+          if (input) { input.disabled = true; input.tabIndex = -1; }
+          if (body)  { body.disabled  = true; }
+        }
+      });
+      openIndex = idx;
+      // 反映（見出し or 本文を触っていなくても構造が変わるので合成→エディタへ反映）
+      editor.value = collectFromDOM();
+      updateCounters();
+    }
+
+    // DOMへ描画（Accordion 構造を用意）
     function renderSections(text) {
       sectionsWrap.innerHTML = "";
       const sections = parseSections(text);
@@ -352,20 +391,36 @@
 
       sections.forEach((sec, idx) => {
         const block = document.createElement("section");
-        block.className = "sec-item";
+        block.className = "sec-item" + (sec.heading !== null ? " has-heading" : " no-heading");
 
         const head = document.createElement("div");
         head.className = "sec-headline";
 
         if (sec.heading !== null) {
+          // ▼ CLOSE 時に見せるクリック用タイトル（編集不可）
+          const headTextBtn = document.createElement("button");
+          headTextBtn.type = "button";
+          headTextBtn.className = "sec-head-text";
+          headTextBtn.textContent = sec.heading; // # 抜き
+          head.appendChild(headTextBtn);
+
+          // ▼ OPEN 時に見せる編集用インプット
           const headInput = document.createElement("input");
           headInput.className = "sec-head-input";
           headInput.type = "text";
           headInput.value = `${"#".repeat(sec.level)} ${sec.heading}`;
           head.appendChild(headInput);
-          // 変更 → 合成
+
+          // クリックで OPEN（ほかは CLOSE）
+          headTextBtn.addEventListener("click", () => setOpen(idx));
+          headTextBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(idx); }
+          });
+
+          // 入力 → テキスト反映＆合成
           headInput.addEventListener("input", () => {
-            // パースし直すのではなく、今表示中DOMからデータを収集して合成
+            const titleOnly = headInput.value.replace(/^\s*#\s*/, ""); // 表示用に # は除去
+            headTextBtn.textContent = titleOnly || "(無題)";
             editor.value = collectFromDOM();
             if (dirty) dirty.hidden = false;
             updateCounters();
@@ -392,25 +447,13 @@
         block.appendChild(ta);
         sectionsWrap.appendChild(block);
       });
-    }
-
-    // 現在のDOM（sec-item群）からテキストを合成
-    function collectFromDOM() {
-      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
-      const out = [];
-      items.forEach((el, i) => {
-        const headInput = el.querySelector(".sec-head-input");
-        const bodyTa    = el.querySelector(".sec-body");
-        if (headInput) {
-          // 入力値をそのまま（# レベル+見出し本文）はユーザ責務
-          out.push(headInput.value.replace(/\r/g, ""));
-        }
-        if (bodyTa && bodyTa.value !== "") {
-          out.push(bodyTa.value.replace(/\r/g, ""));
-        }
-        if (i !== items.length - 1) out.push(""); // 区切り
-      });
-      return out.join("\n");
+      // 最初の状態をセット（# が一つも無ければ何もしない＝冒頭だけ常時表示）
+      const firstHeadIdx = sections.findIndex(s => s.heading !== null);
+      if (firstHeadIdx !== -1) {
+        // openIndex が不正なら最初の見出しを開く
+        if (openIndex < 0 || sections[openIndex]?.heading === null) openIndex = firstHeadIdx;
+        setOpen(openIndex);
+      }
     }
 
     // トグル動作
@@ -418,7 +461,6 @@
       splitToggle.addEventListener("change", () => {
         if (splitToggle.checked) {
           renderSections(editor.value);
-          // CSS で表示を切り替える
           singlePane.classList.add("mode-split");
           sectionsWrap.hidden = false; // hidden が付いていた場合の念押し
         } else {
