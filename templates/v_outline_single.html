@@ -30,11 +30,13 @@
           <span class="dirty" hidden>●未保存</span>
         </div>
         <div class="pane-tools">
+          <label class="notes-toggle"><input type="checkbox" id="splitToggle"> 見出しで分割</label>
           <span class="counter" title="改行は含めません"><span id="charCount">0</span> 文字・<span id="lineCount">0</span> 行</span>
           <button class="btn" id="saveBtn2">保存</button>
         </div>
       </header>
       <textarea class="editor" id="singleEditor" spellcheck="false" wrap="soft">{{ content }}</textarea>
+      <div id="sectionsWrap" class="sections" hidden></div>
     </section>
 
     <div class="side side-right">

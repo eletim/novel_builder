@@ -270,3 +270,53 @@ h1{ margin:8px 0 6px; font-size:18px; }
   border-radius:6px; padding: 4px 6px; margin-left: 6px;
 }
 .summary .t-input, summary .t-input { width: 40ch; max-width: 90%; }
+
+/* 見出し分割エリア */
+.sections {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.sec-item {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sec-headline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #151a24;
+  border-bottom: 1px solid var(--border);
+}
+.sec-head-input {
+  width: 100%;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: 14px/1.4 system-ui, sans-serif;
+}
+.sec-nohead {
+  color: var(--muted);
+  font-size: 12px;
+}
+.sec-body {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--fg);
+  padding: 12px;
+  font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, "Noto Sans Mono", monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  resize: vertical;
+}

@@ -266,39 +266,183 @@
   // ③ 個別ページ（single.html）：1カラム保存＆矢印ナビ
   // ─────────────────────────────────────
   (function initSingleEditor() {
-    const singlePane = $("#singlePane");
-    if (!singlePane) return; // 個別ページ以外
+    const singlePane = document.getElementById("singlePane");
+    if (!singlePane) return;
 
     const chapterPath = singlePane.dataset.chapter;
     const filename    = singlePane.dataset.filename;
-    const editor      = $("#singleEditor");
-    const dirty       = $(".dirty", singlePane);
-    const charEl = document.querySelector("#charCount");
-    const lineEl = document.querySelector("#lineCount");
+    const editor      = document.getElementById("singleEditor");
+    const dirty       = singlePane.querySelector(".dirty");
+    const charEl      = document.getElementById("charCount");
+    const lineEl      = document.getElementById("lineCount");
+    const splitToggle = document.getElementById("splitToggle");
+    const sectionsWrap= document.getElementById("sectionsWrap");
 
     function updateCounters() {
       if (!editor || !charEl || !lineEl) return;
-      const normalized = editor.value.replace(/\r/g, ""); // CR除去
-      const chars = Array.from(normalized.replace(/\n/g, "")).length; // 改行除く
-      const lines = normalized === "" ? 0 : normalized.split("\n").length; // 行数
+      const normalized = editor.value.replace(/\r/g, "");
+      const chars = Array.from(normalized.replace(/\n/g, "")).length;
+      const lines = normalized === "" ? 0 : normalized.split("\n").length;
       charEl.textContent = String(chars);
       lineEl.textContent = String(lines);
     }
 
+    // 既存：未保存マーク & カウンタ
     editor && editor.addEventListener("input", () => {
       if (dirty) dirty.hidden = false;
       updateCounters();
-    })
+    });
+    updateCounters();
 
+    // ---- ここから分割表示ロジック ---------------------------------
+
+    // Markdown見出しで区切る (#..###### の行)
+    function parseSections(text) {
+      const lines = text.replace(/\r/g, "").split("\n");
+      const sections = [];
+      let cur = { heading: null, level: 0, bodyLines: [] };
+
+      const headingRe = /^#\s+(.*)$/;   // ★ ここを1個限定に
+
+      for (const line of lines) {
+        const m = line.match(headingRe);
+        if (m) {
+          // 直前のセクションを確定
+          if (cur.heading !== null || cur.bodyLines.length > 0) {
+            sections.push(cur);
+          }
+          cur = { heading: m[1], level: 1, bodyLines: [] }; // ★ levelは常に1
+        } else {
+          cur.bodyLines.push(line);
+        }
+      }
+      // 最後のセクション
+      if (cur.heading !== null || cur.bodyLines.length > 0) {
+        sections.push(cur);
+      }
+      return sections;
+    }
+
+    // セクション配列 → 一つのテキストへ
+    function composeText(sections) {
+      const parts = [];
+      sections.forEach((sec, idx) => {
+        if (sec.heading !== null) {
+          parts.push(`${"#".repeat(sec.level)} ${sec.heading}`);
+        }
+        // 見出し直後の本文
+        if (sec.bodyLines.length) {
+          parts.push(sec.bodyLines.join("\n"));
+        }
+        // 最後以外は行を確実に1つ区切る（過剰連結防止）
+        if (idx !== sections.length - 1) parts.push("");
+      });
+      return parts.join("\n");
+    }
+
+    // DOMへ描画（編集→即合成→#singleEditorへ反映）
+    function renderSections(text) {
+      sectionsWrap.innerHTML = "";
+      const sections = parseSections(text);
+
+      // 見出しが1つも無い場合は、単一本文として扱う（heading=null）
+      if (sections.length === 0) {
+        sections.push({ heading: null, level: 0, bodyLines: text.replace(/\r/g, "").split("\n") });
+      }
+
+      sections.forEach((sec, idx) => {
+        const block = document.createElement("section");
+        block.className = "sec-item";
+
+        const head = document.createElement("div");
+        head.className = "sec-headline";
+
+        if (sec.heading !== null) {
+          const headInput = document.createElement("input");
+          headInput.className = "sec-head-input";
+          headInput.type = "text";
+          headInput.value = `${"#".repeat(sec.level)} ${sec.heading}`;
+          head.appendChild(headInput);
+          // 変更 → 合成
+          headInput.addEventListener("input", () => {
+            // パースし直すのではなく、今表示中DOMからデータを収集して合成
+            editor.value = collectFromDOM();
+            if (dirty) dirty.hidden = false;
+            updateCounters();
+          });
+        } else {
+          const label = document.createElement("div");
+          label.className = "sec-nohead";
+          label.textContent = "（冒頭）";
+          head.appendChild(label);
+        }
+
+        const ta = document.createElement("textarea");
+        ta.className = "sec-body";
+        ta.spellcheck = false;
+        ta.value = sec.bodyLines.join("\n");
+
+        ta.addEventListener("input", () => {
+          editor.value = collectFromDOM();
+          if (dirty) dirty.hidden = false;
+          updateCounters();
+        });
+
+        block.appendChild(head);
+        block.appendChild(ta);
+        sectionsWrap.appendChild(block);
+      });
+    }
+
+    // 現在のDOM（sec-item群）からテキストを合成
+    function collectFromDOM() {
+      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
+      const out = [];
+      items.forEach((el, i) => {
+        const headInput = el.querySelector(".sec-head-input");
+        const bodyTa    = el.querySelector(".sec-body");
+        if (headInput) {
+          // 入力値をそのまま（# レベル+見出し本文）はユーザ責務
+          out.push(headInput.value.replace(/\r/g, ""));
+        }
+        if (bodyTa && bodyTa.value !== "") {
+          out.push(bodyTa.value.replace(/\r/g, ""));
+        }
+        if (i !== items.length - 1) out.push(""); // 区切り
+      });
+      return out.join("\n");
+    }
+
+    // トグル動作
+    if (splitToggle && sectionsWrap && editor) {
+      splitToggle.addEventListener("change", () => {
+        if (splitToggle.checked) {
+          renderSections(editor.value);
+          editor.hidden = true;
+          sectionsWrap.hidden = false;
+        } else {
+          // DOM から合成して反映（セクション側の修正を確実に取り込む）
+          if (!sectionsWrap.hidden) {
+            editor.value = collectFromDOM();
+            updateCounters();
+          }
+          sectionsWrap.hidden = true;
+          editor.hidden = false;
+        }
+      });
+    }
+
+    // ---- 既存：保存/ショートカット/ナビはそのまま ----
     async function saveSingle(quiet = false) {
+      // 分割表示中は DOM → テキストへ合成してから保存
+      if (splitToggle && splitToggle.checked) {
+        editor.value = collectFromDOM();
+        updateCounters();
+      }
       const res = await fetch("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chapter_path: chapterPath,
-          filename,
-          content: editor ? editor.value : "",
-        }),
+        body: JSON.stringify({ chapter_path: chapterPath, filename, content: editor ? editor.value : "" }),
       });
       if (!res.ok) {
         const text = await res.text();
@@ -310,20 +454,13 @@
       return true;
     }
 
-    // ボタン保存
-    $("#saveBtn")  && $("#saveBtn").addEventListener("click",  () => saveSingle(false));
-    $("#saveBtn2") && $("#saveBtn2").addEventListener("click", () => saveSingle(false));
+    document.getElementById("saveBtn")  && document.getElementById("saveBtn").addEventListener("click",  () => saveSingle(false));
+    document.getElementById("saveBtn2") && document.getElementById("saveBtn2").addEventListener("click", () => saveSingle(false));
 
-    updateCounters();
-
-    // Ctrl+S 保存
     window.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") {
-        e.preventDefault(); saveSingle(false);
-      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveSingle(false); }
     });
 
-    // 矢印キー：←→ステージ / ↑↓章
     const nav = window.__SINGLE__ || {};
     window.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft"  && nav.prevStageUrl)   { e.preventDefault(); location.href = nav.prevStageUrl; }
