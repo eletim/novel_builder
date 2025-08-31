@@ -418,16 +418,17 @@
       splitToggle.addEventListener("change", () => {
         if (splitToggle.checked) {
           renderSections(editor.value);
-          editor.hidden = true;
-          sectionsWrap.hidden = false;
+          // CSS で表示を切り替える
+          singlePane.classList.add("mode-split");
+          sectionsWrap.hidden = false; // hidden が付いていた場合の念押し
         } else {
           // DOM から合成して反映（セクション側の修正を確実に取り込む）
           if (!sectionsWrap.hidden) {
             editor.value = collectFromDOM();
             updateCounters();
           }
-          sectionsWrap.hidden = true;
-          editor.hidden = false;
+          singlePane.classList.remove("mode-split");
+          sectionsWrap.hidden = true; // 念のため隠す（どちらでもOK）
         }
       });
     }

@@ -320,3 +320,19 @@ h1{ margin:8px 0 6px; font-size:18px; }
   overflow-wrap: anywhere;
   resize: vertical;
 }
+
+/* 分割トグル：editor ↔ sections */
+#singlePane .editor  { display: block; }
+#singlePane .sections{ display: none; }
+
+#singlePane.mode-split .editor  { display: none; }
+#singlePane.mode-split .sections{ display: flex; }
+
+/* volume 側でも同じIDを使っていない場合はセレクタを合わせる */
+#vSinglePane .editor  { display: block; }
+#vSinglePane .sections{ display: none; }
+#vSinglePane.mode-split .editor  { display: none; }
+#vSinglePane.mode-split .sections{ display: flex; }
+
+/*（任意）保険。hidden を使うコードが残っていても確実に消える */
+[hidden]{ display:none !important; }
