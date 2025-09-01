@@ -356,6 +356,22 @@
 
     // OPEN/CLOSE を1つに保つ
     let openIndex = -1; // 最初の # セクションを後で OPEN にする
+    function setClosedState(el, closed = true) {
+      const input = el.querySelector(".sec-head-input");
+      const body  = el.querySelector(".sec-body");
+      el.classList.toggle("open", !closed);
+      el.classList.toggle("closed", closed);
+      if (input) { input.disabled = closed; input.tabIndex = closed ? -1 : 0; }
+      if (body)  { body.disabled  = closed; }
+    }
+    function closeAll() {
+      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
+      items.forEach(el => setClosedState(el, true));
+      openIndex = -1;
+      // DOM状態→テキストにも反映（念のため）
+      editor.value = collectFromDOM();
+      updateCounters();
+    }
     function setOpen(idx) {
       const items = Array.from(sectionsWrap.querySelectorAll(".sec-item.has-heading"));
       items.forEach((el, i) => {
@@ -426,10 +442,16 @@
             updateCounters();
           });
         } else {
-          const label = document.createElement("div");
-          label.className = "sec-nohead";
-          label.textContent = "（冒頭）";
-          head.appendChild(label);
+          const headTextBtn = document.createElement("button");
+          headTextBtn.type = "button";
+          headTextBtn.className = "sec-head-text";
+          headTextBtn.textContent = "（冒頭）";
+          head.appendChild(headTextBtn);
+
+          headTextBtn.addEventListener("click", () => setOpen(idx));
+          headTextBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(idx); }
+          });
         }
 
         const ta = document.createElement("textarea");
@@ -447,13 +469,8 @@
         block.appendChild(ta);
         sectionsWrap.appendChild(block);
       });
-      // 最初の状態をセット（# が一つも無ければ何もしない＝冒頭だけ常時表示）
-      const firstHeadIdx = sections.findIndex(s => s.heading !== null);
-      if (firstHeadIdx !== -1) {
-        // openIndex が不正なら最初の見出しを開く
-        if (openIndex < 0 || sections[openIndex]?.heading === null) openIndex = firstHeadIdx;
-        setOpen(openIndex);
-      }
+      // 初期状態は「すべて閉じる」
+      closeAll();
     }
 
     // トグル動作
@@ -461,6 +478,7 @@
       splitToggle.addEventListener("change", () => {
         if (splitToggle.checked) {
           renderSections(editor.value);
+          closeAll();
           singlePane.classList.add("mode-split");
           sectionsWrap.hidden = false; // hidden が付いていた場合の念押し
         } else {
