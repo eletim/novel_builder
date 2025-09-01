@@ -87,7 +87,7 @@
       const disp   = holder.querySelector(".t-display") || holder.querySelector(".chapter-link");
       if (!input || !disp) return;
       input.hidden = false;
-      input.dataset.orig = input.value.trim(); 
+      input.dataset.orig = input.value.trim();
       if (disp.classList.contains("chapter-link")) disp.style.display = "none";
       else disp.hidden = true;
       editBtn.style.visibility = "hidden";
@@ -177,7 +177,6 @@
 
   // 呼び出し
   setupTitleEditing(document.querySelector(".tree"));
-
 
   // ─────────────────────────────────────
   // ② 一覧ページ（chapter.html）：4カラム保存
@@ -302,7 +301,7 @@
       const sections = [];
       let cur = { heading: null, level: 0, bodyLines: [] };
 
-      const headingRe = /^#\s+(.*)$/;   // ★ ここを1個限定に
+      const headingRe = /^#\s+(.*)$/;   // #1限定
 
       for (const line of lines) {
         const m = line.match(headingRe);
@@ -311,7 +310,7 @@
           if (cur.heading !== null || cur.bodyLines.length > 0) {
             sections.push(cur);
           }
-          cur = { heading: m[1], level: 1, bodyLines: [] }; // ★ levelは常に1
+          cur = { heading: m[1], level: 1, bodyLines: [] }; // levelは常に1
         } else {
           cur.bodyLines.push(line);
         }
@@ -323,18 +322,16 @@
       return sections;
     }
 
-    // セクション配列 → 一つのテキストへ
+    // セクション配列 → 一つのテキストへ（未使用だが残置）
     function composeText(sections) {
       const parts = [];
       sections.forEach((sec, idx) => {
         if (sec.heading !== null) {
           parts.push(`${"#".repeat(sec.level)} ${sec.heading}`);
         }
-        // 見出し直後の本文
         if (sec.bodyLines.length) {
           parts.push(sec.bodyLines.join("\n"));
         }
-        // 最後以外は行を確実に1つ区切る（過剰連結防止）
         if (idx !== sections.length - 1) parts.push("");
       });
       return parts.join("\n");
@@ -345,9 +342,11 @@
       const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
       const out = [];
       items.forEach((el, i) => {
-        const headInput = el.querySelector(".sec-head-input");
-        const bodyTa    = el.querySelector(".sec-body");
-        if (headInput) out.push(headInput.value.replace(/\r/g, ""));
+        const heading = (el.dataset.heading ?? null);
+        const level   = Number(el.dataset.level || 1);
+        const bodyTa  = el.querySelector(".sec-body");
+
+        if (heading !== null) out.push(`${"#".repeat(level)} ${heading}`);
         if (bodyTa && bodyTa.value !== "") out.push(bodyTa.value.replace(/\r/g, ""));
         if (i !== items.length - 1) out.push("");
       });
@@ -355,42 +354,30 @@
     }
 
     // OPEN/CLOSE を1つに保つ
-    let openIndex = -1; // 最初の # セクションを後で OPEN にする
+    let openIndex = -1;
+
     function setClosedState(el, closed = true) {
-      const input = el.querySelector(".sec-head-input");
       const body  = el.querySelector(".sec-body");
       el.classList.toggle("open", !closed);
       el.classList.toggle("closed", closed);
-      if (input) { input.disabled = closed; input.tabIndex = closed ? -1 : 0; }
       if (body)  { body.disabled  = closed; }
     }
+
+    function setOpen(idx) {
+      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
+      items.forEach((el, i) => {
+        setClosedState(el, i !== idx);
+      });
+      openIndex = idx;
+      editor.value = collectFromDOM();
+      updateCounters();
+    }
+
     function closeAll() {
       const items = Array.from(sectionsWrap.querySelectorAll(".sec-item"));
       items.forEach(el => setClosedState(el, true));
       openIndex = -1;
       // DOM状態→テキストにも反映（念のため）
-      editor.value = collectFromDOM();
-      updateCounters();
-    }
-    function setOpen(idx) {
-      const items = Array.from(sectionsWrap.querySelectorAll(".sec-item.has-heading"));
-      items.forEach((el, i) => {
-        const input = el.querySelector(".sec-head-input");
-        const body  = el.querySelector(".sec-body");
-        if (i === idx) {
-          el.classList.add("open");
-          el.classList.remove("closed");
-          if (input) { input.disabled = false; input.tabIndex = 0; }
-          if (body)  { body.disabled  = false; }
-        } else {
-          el.classList.remove("open");
-          el.classList.add("closed");
-          if (input) { input.disabled = true; input.tabIndex = -1; }
-          if (body)  { body.disabled  = true; }
-        }
-      });
-      openIndex = idx;
-      // 反映（見出し or 本文を触っていなくても構造が変わるので合成→エディタへ反映）
       editor.value = collectFromDOM();
       updateCounters();
     }
@@ -413,44 +400,53 @@
         head.className = "sec-headline";
 
         if (sec.heading !== null) {
-          // ▼ CLOSE 時に見せるクリック用タイトル（編集不可）
+          // ▼ タイトルボタン（開閉用・常時同一）
           const headTextBtn = document.createElement("button");
           headTextBtn.type = "button";
           headTextBtn.className = "sec-head-text";
           headTextBtn.textContent = sec.heading; // # 抜き
           head.appendChild(headTextBtn);
 
-          // ▼ OPEN 時に見せる編集用インプット
-          const headInput = document.createElement("input");
-          headInput.className = "sec-head-input";
-          headInput.type = "text";
-          headInput.value = `${"#".repeat(sec.level)} ${sec.heading}`;
-          head.appendChild(headInput);
+          // メタ情報を block に保持（合成時に使う）
+          block.dataset.heading = sec.heading;
+          block.dataset.level = String(sec.level || 1);
 
-          // クリックで OPEN（ほかは CLOSE）
-          headTextBtn.addEventListener("click", () => setOpen(idx));
-          headTextBtn.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(idx); }
+          // クリックでトグル：閉→開、開→閉
+          headTextBtn.addEventListener("click", () => {
+            if (openIndex === idx) {
+              // 今開いている自分を閉じる
+              setClosedState(block, true);
+              openIndex = -1;
+              editor.value = collectFromDOM();
+              updateCounters();
+            } else {
+              setOpen(idx);
+            }
           });
 
-          // 入力 → テキスト反映＆合成
-          headInput.addEventListener("input", () => {
-            const titleOnly = headInput.value.replace(/^\s*#\s*/, ""); // 表示用に # は除去
-            headTextBtn.textContent = titleOnly || "(無題)";
-            editor.value = collectFromDOM();
-            if (dirty) dirty.hidden = false;
-            updateCounters();
+          headTextBtn.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); headTextBtn.click(); }
           });
         } else {
+          // （冒頭）もボタン化して同じ挙動
           const headTextBtn = document.createElement("button");
           headTextBtn.type = "button";
           headTextBtn.className = "sec-head-text";
           headTextBtn.textContent = "（冒頭）";
           head.appendChild(headTextBtn);
 
-          headTextBtn.addEventListener("click", () => setOpen(idx));
+          headTextBtn.addEventListener("click", () => {
+            if (openIndex === idx) {
+              setClosedState(block, true);
+              openIndex = -1;
+              editor.value = collectFromDOM();
+              updateCounters();
+            } else {
+              setOpen(idx);
+            }
+          });
           headTextBtn.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpen(idx); }
+            if (e.key === "Enter" || e.key === " ") { e.preventDefault(); headTextBtn.click(); }
           });
         }
 
