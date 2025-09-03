@@ -487,6 +487,14 @@
           sectionsWrap.hidden = true; // 念のため隠す（どちらでもOK）
         }
       });
+      
+      // 初期状態の反映
+      const headingCount = (editor.value.match(/^#\s+.+$/gm) || []).length;
+      if (headingCount >= 2) {
+        splitToggle.checked = true;
+        // 既存のハンドラをそのまま使って初期反映
+        splitToggle.dispatchEvent(new Event("change"));
+      }
     }
 
     // ---- 既存：保存/ショートカット/ナビはそのまま ----
