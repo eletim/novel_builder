@@ -18,6 +18,7 @@ STAGES = [
 
 VOL_STAGES = [
     ("10.plot.md",   "Concept Plot"),
+    ("15.sugar.md", "Highlight Plot"),
     ("20.script.md", "Character Plot"),
     ("30.draft.md",  "Draft Plot"),
     ("40.final.md",  "Final Plot"),
@@ -404,7 +405,7 @@ def api_save():
         abort(400, description="chapter_path and filename are required")
 
     # 4ステージ+notes.md のみ許容
-    allowed = {f for f, _ in STAGES} | {"notes.md"}
+    allowed = {f for f, _ in STAGES} | {f for f, _ in VOL_STAGES} | {"notes.md"}
     if filename not in allowed:
         abort(400, description="filename not allowed")
 
