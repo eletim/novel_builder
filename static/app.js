@@ -526,13 +526,13 @@
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveSingle(false); }
     });
 
-    const nav = window.__SINGLE__ || {};
-    window.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowLeft"  && nav.prevStageUrl)   { e.preventDefault(); location.href = nav.prevStageUrl; }
-      if (e.key === "ArrowRight" && nav.nextStageUrl)   { e.preventDefault(); location.href = nav.nextStageUrl; }
-      if (e.key === "ArrowUp"    && nav.prevChapterUrl) { e.preventDefault(); location.href = nav.prevChapterUrl; }
-      if (e.key === "ArrowDown"  && nav.nextChapterUrl) { e.preventDefault(); location.href = nav.nextChapterUrl; }
-    });
+    // const nav = window.__SINGLE__ || {};
+    // window.addEventListener("keydown", (e) => {
+    //   if (e.key === "ArrowLeft"  && nav.prevStageUrl)   { e.preventDefault(); location.href = nav.prevStageUrl; }
+    //   if (e.key === "ArrowRight" && nav.nextStageUrl)   { e.preventDefault(); location.href = nav.nextStageUrl; }
+    //   if (e.key === "ArrowUp"    && nav.prevChapterUrl) { e.preventDefault(); location.href = nav.prevChapterUrl; }
+    //   if (e.key === "ArrowDown"  && nav.nextChapterUrl) { e.preventDefault(); location.href = nav.nextChapterUrl; }
+    // });
   })();
 
   // ─────────────────────────────────────
@@ -591,15 +591,15 @@
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); save(); }
       });
 
-      // 章移動（ステージは維持）
-      window.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowUp" && ctx.prevChapterUrl) {
-          e.preventDefault(); location.href = ctx.prevChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
-        }
-        if (e.key === "ArrowDown" && ctx.nextChapterUrl) {
-          e.preventDefault(); location.href = ctx.nextChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
-        }
-      });
+      // // 章移動（ステージは維持）
+      // window.addEventListener("keydown", (e) => {
+      //   if (e.key === "ArrowUp" && ctx.prevChapterUrl) {
+      //     e.preventDefault(); location.href = ctx.prevChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
+      //   }
+      //   if (e.key === "ArrowDown" && ctx.nextChapterUrl) {
+      //     e.preventDefault(); location.href = ctx.nextChapterUrl + "?stage=" + encodeURIComponent(ctx.filename);
+      //   }
+      // });
 
       // 離脱ガード
       window.addEventListener("beforeunload", (e) => {
