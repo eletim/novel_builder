@@ -1,8 +1,15 @@
-// static/app.js  ← 丸ごと置き換え
+// static/app.js
 (function () {
   // 小ユーティリティ
   const $  = (sel, el = document) => el.querySelector(sel);
   const $$ = (sel, el = document) => Array.from(el.querySelectorAll(sel));
+
+  // 追加：現在のURLが /novel 配下なら、APIプレフィックスとして /novel を付ける
+  function api(path, init={}) {
+    const prefix = location.pathname.startsWith('/novel') ? '/novel' : '';
+    const p = path.startsWith('/') ? path : `/${path}`;
+    return fetch(prefix + p, init);
+  }
 
   // トースト
   const toast = $("#toast");
@@ -28,7 +35,7 @@
         if (!volume_path) return;
         btn.disabled = true;
         try {
-          const res = await fetch("/api/create_chapter", {
+          const res = await api("/api/create_chapter", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ volume_path })
@@ -58,7 +65,7 @@
           if (!volume_path) return;
           btn.disabled = true;
           try {
-            const res = await fetch("/api/create_outline", {
+            const res = await api("/api/create_outline", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ volume_path })
@@ -127,7 +134,7 @@
       }
       try {
         input.dataset.saving = "1";
-        const res = await fetch("/api/set_title", {
+        const res = await api("/api/set_title", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ path, title: value })
@@ -202,7 +209,7 @@
       const dirty    = $(".dirty",  pane);
       if (!filename || !ta) return false;
 
-      const res = await fetch("/api/save", {
+      const res = await api("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -504,7 +511,7 @@
         editor.value = collectFromDOM();
         updateCounters();
       }
-      const res = await fetch("/api/save", {
+      const res = await api("/api/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chapter_path: chapterPath, filename, content: editor ? editor.value : "" }),
@@ -571,7 +578,7 @@
 
       async function save() {
         const content = editor.innerText.replace(/\r/g, "");
-        const res = await fetch("/api/save", {
+        const res = await api("/api/save", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ chapter_path: ctx.chapterPath, filename: ctx.filename, content })
