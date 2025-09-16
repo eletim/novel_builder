@@ -3,8 +3,10 @@ import os
 import re
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, abort, url_for
+from werkzeug.middleware.proxy_fix import ProxyFix
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1, x_prefix=1)  # ★ x_prefix=1
 
 # 小説のルート（例: novel/）。環境変数 NOVEL_ROOT で切替可。
 ROOT_DIR = Path(os.environ.get("NOVEL_ROOT", Path.cwd() / "novel")).resolve()
