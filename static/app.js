@@ -552,6 +552,9 @@
       const root = document.querySelector(".fs-root");
       if (!ctx || !editor || !root) return;
 
+      // ★ 追加：オートセーブ可否（data-autosave="0" ならOFF）
+      const autoSave = (root.dataset.autosave || "1") !== "0";
+
       const dirty = root.querySelector(".dirty");
       const charEl = document.getElementById("fsChar");
       const lineEl = document.getElementById("fsLine");
@@ -568,12 +571,14 @@
       }
       updateCounters();
 
-      // デバウンス・オートセーブ
+      // 入力時の処理：カウンタ更新＆未保存マーク。オートセーブはフラグで可否。
       let t = null;
       editor.addEventListener("input", () => {
         if (dirty) dirty.hidden = false;
         updateCounters();
-        clearTimeout(t); t = setTimeout(save, 800);
+        if (!autoSave) return;          // ★ OFFなら保存予約しない
+        clearTimeout(t);
+        t = setTimeout(save, 800);
       });
 
       async function save() {
