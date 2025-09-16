@@ -1,3 +1,17 @@
+
+# setup
+
+```sh
+cd ~/novel_builder
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+```sh
+pip install --upgrade pip
+pip install flask
+```
+
 # 小説フォルダのルート（例）を環境変数で指定
 export NOVEL_ROOT=/home/eletim/novel/novel_builder/data
 # サーバ起動
